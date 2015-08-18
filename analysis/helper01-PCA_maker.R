@@ -17,7 +17,8 @@ PCA_maker <- function(expDes, v) {
                        legend.text = element_text(size = 12)) +
     scale_color_manual(values = c("Q903" = "#e34a33", "H898" = "#2b8cbe")) +
     labs(title=paste("Principal Component Analysis (PCA) of Stone Cell Biosynthesis 
-                   RNA-Seq Libraries from", run),
+                   RNA-Seq Libraries from"),
          shape = "Celltype", color = "Genotype", size = 40)
   
+  return(p)
 }
