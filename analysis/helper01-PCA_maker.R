@@ -12,7 +12,7 @@ PCA_maker <- function(expDes, v) {
               size = 3, vjust = 2.25, hjust = 0.5) + 
     theme_bw() + theme(legend.background = element_rect(size = 5, linetype = "solid"),
                        legend.justification = c(0, 0),
-                       legend.position = c(0.85, 0.05),
+                       legend.position = c(0.7, 0.05),
                        legend.title = element_text(size = 12),
                        legend.text = element_text(size = 12)) +
     scale_color_manual(values = c("Q903" = "#e34a33", "H898" = "#2b8cbe")) +
