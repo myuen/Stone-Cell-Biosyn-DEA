@@ -70,7 +70,7 @@ v <- voom(x, modMat, plot = TRUE)
 
 
 p <- PCA_maker(expDes, v)
-ggsave("results/figures/pooledRun_PCA.18aug.png",
+ggsave("results/figures/pooledRun_PCA.19aug.png",
        plot = p, height = 8.5, width = 11, unit = "in")
 
 
