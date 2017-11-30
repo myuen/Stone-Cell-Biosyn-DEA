@@ -27,11 +27,13 @@ x <- DGEList(counts = raw, group = expDes$group)
 
 
 # Keep only genes with at least 1 count-per-million reads (cpm) in at least 3 samples
-dim(x) # [1] 855216     12
+dim(x)
+# [1] 855216     12
 
 x <- x[(rowSums(cpm(x) > 1) >= 3), ]
 
-dim(x) # [1] 39839    12
+dim(x)
+# [1] 39839    12
 
 
 # Reset depth
@@ -40,6 +42,10 @@ x$samples$lib.size <- colSums(x$counts)
 
 # TMM Normalization by Depth
 x <- calcNormFactors(x)
+
+
+write.table(cpm(x), "results/StoneCellBiosyn_pooledRun.normalized_cpm.lowExpFiltered.txt",
+            row.names = TRUE, col.names = TRUE, sep = "\t", quote = FALSE)
 
 
 # MDS analysis
@@ -102,7 +108,7 @@ results.wide <- reshape(results, direction = "wide",
 ### Write results files
 write.table(
   results, "results/StoneCellBiosyn_pooledRun_stats.18aug.long.txt", 
-  quote = FALSE, sep = "\t", row.names = FALSE)
+  quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
 
 write.table(
   results.wide, "results/StoneCellBiosyn_pooledRun_stats.18aug.wide.txt",
@@ -113,4 +119,4 @@ write.table(
 write.table(
   subset(results, results$global.adj.P <= 0.01 & abs(results$logFC) >= 2),
   "results/StoneCellBiosyn_pooledRun_sigDE.18aug.txt", quote = FALSE,
-  sep = "\t", col.names = FALSE, row.names = FALSE)
+  sep = "\t", col.names = TRUE, row.names = FALSE)
