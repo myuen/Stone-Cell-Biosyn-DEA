@@ -6,7 +6,7 @@ results.long <-
   read.delim("results/StoneCellBiosyn_pooledRun_stats.18aug.long.txt", header = TRUE)
 
 
-lfc <- 2
+lfcCutoff <- 2
 pCutoff <- 0.01
 
 
@@ -14,8 +14,8 @@ summarizeRes <- function(results.long) {
   ddply(results.long, ~ focus, 
         function(x) {
           x <- subset(x, global.adj.P <= pCutoff);
-          gt <- table(x$logFC >= lfc)["TRUE"]
-          lt <- table(x$logFC < (-1 * lfc))["TRUE"]
+          gt <- table(x$logFC >= lfcCutoff)["TRUE"]
+          lt <- table(x$logFC < (-1 * lfcCutoff))["TRUE"]
           return(c("up" = gt, "down" = lt))
         })
 }
@@ -26,6 +26,25 @@ summarizeRes(results.long)
 # 2  DSC_gType    4155      3733
 # 3 H898_cType    1137       436
 # 4 Q903_cType     438       519
+
+
+### Create Venn diagram for contigs up-regulated in H898 and Q903
+H898_DSC_upReg <- subset(results.long, results.long$focus == "H898_cType" &
+                           results.long$logFC >= lfcCutoff & 
+                           results.long$global.adj.P <= pCutoff)
+dim(H898_DSC_upReg)
+# [1] 1137    5
+
+Q903_DSC_upReg <- subset(results.long, results.long$focus == "Q903_cType" &
+                           results.long$logFC >= lfcCutoff & 
+                           results.long$global.adj.P <= pCutoff)
+dim(Q903_DSC_upReg)
+# [1] 438   5
+
+
+
+
+
 
 
 CP_gType_vp <- volcanoPlot(
