@@ -2,12 +2,15 @@ require(edgeR)
 require(ggplot2)
 require(limma)
 
+
 # source("analysis/helper02-DE_workflow.R")
 source("analysis/helper01-PCA_maker.R")
 source("analysis/helper02-proc_results.R")
 
+
 # Load raw Salmon quantification results
 raw <- read.table("data/pooled/StoneCellBiosyn_Salmon_quantification.txt")
+
 
 colnames(raw)
 colnames(raw) <- gsub("X898", "H898", colnames(raw))
