@@ -32,17 +32,17 @@ system.time(
   })
 )
 #    user  system elapsed 
-#   2.534   0.036   2.579 
+#   5.117   0.092   5.233 
 
-  
 str(myBigList)
-# 
-  
+# List of 12
+
+
 # Flatten big list of 5 into single data frame
 rawSalmonCounts <- flatten_dfr(myBigList)
 colnames(rawSalmonCounts) <- c("CDS", names(myBigList))
 str(rawSalmonCounts)
-# Classes ‘tbl_df’, ‘tbl’ and 'data.frame':     87266 obs. of  6 variables:
+# Classes ‘tbl_df’, ‘tbl’ and 'data.frame':	101973 obs. of  13 variables:
 
 
 write.table(rawSalmonCounts, "data/consolidated-Salmon-counts.txt",
