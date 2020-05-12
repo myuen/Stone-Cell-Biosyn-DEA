@@ -4,15 +4,14 @@ library(stringr)
 
 
 # Marshal output files from Salmon
-rawFiles <- list.files("data/Salmon-results/", full.names = TRUE)
+rawFiles <- list.files("data/Salmon-Oct19", full.names = TRUE)
 
 ## Extract library namne from filename
 libNames <- str_extract(basename(rawFiles), "\\d{3}_\\w{2,3}_\\w{4}")
 
-## Add prefix to library name
-libNames <- gsub("898", "H898", libNames)
-libNames <- gsub("903", "Q903", libNames)
-
+## Replace genotype name.  898 = Resistance; 903 = Susceptible
+libNames <- gsub("898", "R", libNames)
+libNames <- gsub("903", "S", libNames)
 
 ## Use as names for good side effects later
 names(rawFiles) <- libNames
@@ -51,8 +50,8 @@ write.table(rawSalmonCounts, "data/consolidated-Salmon-counts.txt",
 
 ## write design matrix
 expDes <- data.frame(sample = libNames,
-                     gType = factor(c(rep("H898", 6), rep("Q903", 6)),
-                                    levels = c("Q903", "H898")),
+                     gType = factor(c(rep("R", 6), rep("S", 6)),
+                                    levels = c("S", "R")),
                      cType = factor(rep(c(rep("CP", 3), rep("DSC", 3)), 2),
                                     levels = c("CP", "DSC")),
                      bioRep = as.numeric(rep(c(1, 2, 3), 4)))
