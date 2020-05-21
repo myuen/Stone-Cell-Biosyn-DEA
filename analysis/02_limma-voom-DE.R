@@ -1,20 +1,28 @@
 require(edgeR)
-require(ggplot2)
+require(dplyr)
 require(limma)
+require(purrr)
 require(tibble)
 
 
-pCutoff <- 0.01
+source("analysis/helper01-PCA_maker.R")
+
+
+### Differential Expression Analysis on Sitka Spruce Cell type 
+### experiment with limma + voom
+
+# abs(logFC) log fold change cut-off.  Anything greater 
+# than (-1 x lfc) and less than lfc will be deemed 
+# biological insignificant
 lfcCutoff <- 2
 
-
-# source("analysis/helper02-DE_workflow.R")
-source("analysis/helper01-PCA_maker.R")
-source("analysis/helper02-proc_results.R")
+# p-value cut-off.  Anything > pCutoff will be deemed 
+# statistically insignificant.
+pCutoff <- 0.05
 
 
 # Load raw Salmon quantification results
-raw <- read.table("data/consolidated-Salmon-counts.txt", header = TRUE, 
+raw <- read.table("data/consolidated-Salmon-counts.txt", header = TRUE,
                   colClasses = c("character", rep("numeric", 12)))
 raw <- column_to_rownames(raw, "CDS")
 str(raw)
@@ -22,69 +30,98 @@ str(raw)
 
 
 # Load experimental design
-expDes <- read.table("data/stone_cell_biosyn_exp_design.tsv", header = TRUE)
-expDes$gType <- relevel(expDes$gType, ref = "Q903")
+expDes <- read.table("data/stone_cell_biosyn_exp_design.tsv", 
+                     header = TRUE)
+expDes$cType <- relevel(expDes$cType, ref = "CP")
+expDes$gType <- relevel(expDes$gType, ref = "S")
+
+#        sample gType cType bioRep group
+# 1   R_CP_rep1     R    CP      1  R.CP
+# 2   R_CP_rep2     R    CP      2  R.CP
+# 3   R_CP_rep3     R    CP      3  R.CP
+# 4  R_DSC_rep1     R   DSC      1 R.DSC
+# 5  R_DSC_rep2     R   DSC      2 R.DSC
+# 6  R_DSC_rep3     R   DSC      3 R.DSC
+# 7   S_CP_rep1     S    CP      1  S.CP
+# 8   S_CP_rep2     S    CP      2  S.CP
+# 9   S_CP_rep3     S    CP      3  S.CP
+# 10 S_DSC_rep1     S   DSC      1 S.DSC
+# 11 S_DSC_rep2     S   DSC      2 S.DSC
+# 12 S_DSC_rep3     S   DSC      3 S.DSC
 
 
 # Load counts into DGEList object from edgeR package.
 x <- DGEList(counts = raw, group = expDes$group)
 
-
-# Keep only genes with at least 1 count-per-million reads (cpm) in at least 3 samples
+# Keep only genes with at least 1 count-per-million reads (cpm) in 
+# at least 3 samples
 dim(x)
 # [1] 101973     12
-
 
 # Filter low-expression contigs
 x <- x[(rowSums(cpm(x) > 1) >= 3), ]
 
-
 dim(x)
 # [1] 26806    12
-
 
 # Reset depth
 x$samples$lib.size <- colSums(x$counts)
 
-
 # TMM Normalization by Depth
 x <- calcNormFactors(x)
 
+cpm <- cpm(x)
 
-write.table(cpm(x), "results/StoneCellBiosyn_pooledRun.normalized_cpm.lowExpFiltered.txt",
-            row.names = TRUE, col.names = TRUE, sep = "\t", quote = FALSE)
-
-
-# MDS analysis
-png("results/figures/pooledRun_MDS.25oct.png", height = 1200, width = 1680)
-plotMDS(x, top = Inf)
-dev.off()
+write.table(
+  cpm, 
+  "results/StoneCellBiosyn.normalized_cpm.lowExpFiltered.txt",
+  row.names = TRUE, col.names = TRUE, sep = "\t", quote = FALSE)
 
 
 # make model matrix
 # Interaction design
 modMat <- model.matrix(~ gType * cType, expDes)
-colnames(modMat)
 colnames(modMat) <- gsub("[()]", "", colnames(modMat))
 colnames(modMat) <- gsub(":", "_", colnames(modMat))
-colnames(modMat)
-cont_matrix <-
-  makeContrasts(
-    CP_gType = gTypeH898,
-    DSC_gType = gTypeH898 + gTypeH898_cTypeDSC, # H898 DSC - Q903 DSC
-    Q903_cType = cTypeDSC,
-    H898_cType = cTypeDSC + gTypeH898_cTypeDSC,
-    levels = modMat)
+
+#    Intercept gTypeR cTypeDSC gTypeR_cTypeDSC
+# 1          1      1        0               0
+# 2          1      1        0               0
+# 3          1      1        0               0
+# 4          1      1        1               1
+# 5          1      1        1               1
+# 6          1      1        1               1
+# 7          1      0        0               0
+# 8          1      0        0               0
+# 9          1      0        0               0
+# 10         1      0        1               0
+# 11         1      0        1               0
+# 12         1      0        1               0
+
+
+cont_matrix <- makeContrasts(
+  # 1. DE between CP and DSC in susceptible genotype (Q903)
+  S_cType = cTypeDSC,
+  
+  # 2. DE between CP and DSC in resistance genotype (H898)
+  R_cType = cTypeDSC + gTypeR_cTypeDSC,
+  
+  # 3. DE in CP between genotype
+  CP_gType = gTypeR,
+  
+  # 4. DE in DSC between genotype
+  DSC_gType = gTypeR + gTypeR_cTypeDSC,
+  levels = modMat)
 
 
 # voom transformation
 # voom-plot
-v <- voom(x, modMat, plot = TRUE)
+v <- voom(x, modMat, plot = FALSE)
 
 
 p <- PCA_maker(expDes, v)
-ggsave("results/figures/pooledRun_PCA.25oct.png",
-       plot = p, height = 8.5, width = 11, unit = "in")
+ggsave("results/figures/Fig1a-LMD-PCA.15May.svg", plot = p, 
+       height = 6, width = 6)
 
 
 # Linear modelling
@@ -94,40 +131,44 @@ fit <- contrasts.fit(fit, cont_matrix)
 
 fit <- eBayes(fit)
 
-
-# N.B.  LogFC cut off threashold set at 2
-summary(decideTests(fit, method = "global", adjust.method = "fdr", 
+summary(decideTests(fit, method = "separate", adjust.method = "fdr", 
                     p.value = pCutoff, lfc = lfcCutoff))
-#        CP_gType DSC_gType Q903_cType H898_cType
-# Down       1223      1200        348        276
-# NotSig    24614     24078      26245      25722
-# Up          969      1528        213        808
+#        S_cType R_cType CP_gType DSC_gType
+# Down       522     426     1477      1434
+# NotSig   25975   25396    24198     23514
+# Up         309     984     1131      1858
 
-results <- proc_results(fit)
+focus_terms <- colnames(cont_matrix)
 
+results <-
+  map_df(focus_terms, function(f) {
+    tmp <- topTable(fit, coef = f, number = Inf, 
+                    sort.by = "none", adjust.method = "fdr")
+    tmp$focus_term <- f
+    tmp$cds <- row.names(tmp)
+    return(tmp)
+  })
 
-summary(results$focus)
-#   CP_gType  DSC_gType Q903_cType H898_cType 
-#      39839      39839      39839      39839 
+str(results)
+# 'data.frame':	107224 obs. of  8 variables:
 
+table(results$focus_term)
+# CP_gType  R_cType  S_cType   SC_dev 
+#    26806    26806    26806    26806 
 
-results.wide <- reshape(results, direction = "wide", 
-                        idvar = "contig", timevar = "focus")
+# Reorganize columns
+results <- results %>% select(cds, logFC, adj.P.Val, focus_term)
 
-### Write results files
 write.table(
-  quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE,
-  results, "results/StoneCellBiosyn_pooledRun_stats.25oct.long.txt"
+  results, quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE,
+  "results/StoneCellBiosyn.all_stats.21May.txt"
 )
 
-write.table(
-  results.wide, quote = FALSE,  sep = "\t", row.names = FALSE,
-  "results/StoneCellBiosyn_pooledRun_stats.25oct.wide.txt"
-)
 
+### Write out all DE contig ids with abs(logFC) >= 2 & adj. p-value <= 0.05
+sigDE <- results %>% 
+  filter(adj.P.Val <= pCutoff & abs(logFC) >= lfcCutoff)
 
-### Write out all DE contig ids with abs(logFC) >= 2 & adj. p-value <= 0.01
 write.table(
-  subset(results, results$global.adj.P <= pCutoff & abs(results$logFC) >= lfcCutoff),
-  "results/StoneCellBiosyn_pooledRun.sigDE.25oct.txt", quote = FALSE,
-  sep = "\t", col.names = TRUE, row.names = FALSE)
+  sigDE, quote = FALSE, sep = "\t", col.names = TRUE, row.names = FALSE,
+  "results/StoneCellBiosyn.sigDE_stats.21May.txt")
