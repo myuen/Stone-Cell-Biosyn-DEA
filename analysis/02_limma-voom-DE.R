@@ -22,8 +22,9 @@ pCutoff <- 0.05
 
 
 # Load raw Salmon quantification results
-raw <- read.table("data/consolidated-Salmon-counts.txt", header = TRUE,
-                  colClasses = c("character", rep("numeric", 12)))
+raw <- 
+  read.table("data/consolidated-Salmon-counts.txt", header = TRUE, 
+             colClasses = c("character", rep("numeric", 12)))
 raw <- column_to_rownames(raw, "CDS")
 str(raw)
 # 'data.frame':	101973 obs. of  12 variables:
@@ -62,7 +63,7 @@ dim(x)
 x <- x[(rowSums(cpm(x) > 1) >= 3), ]
 
 dim(x)
-# [1] 26806    12
+# [1] 26772    12
 
 # Reset depth
 x$samples$lib.size <- colSums(x$counts)
@@ -120,29 +121,30 @@ v <- voom(x, modMat, plot = FALSE)
 
 
 p <- PCA_maker(expDes, v)
-ggsave("results/figures/Fig1a-LMD-PCA.15May.svg", plot = p, 
+ggsave("results/figures/Fig1a-LMD-PCA.22May.svg", plot = p, 
        height = 6, width = 6)
 
 
 # Linear modelling
 fit <- lmFit(v, modMat)
 
-fit <- contrasts.fit(fit, cont_matrix)
+fit2 <- contrasts.fit(fit, cont_matrix)
 
-fit <- eBayes(fit)
+fit3 <- eBayes(fit2)
 
-summary(decideTests(fit, method = "separate", adjust.method = "fdr", 
+summary(decideTests(fit3, method = "separate", adjust.method = "fdr", 
                     p.value = pCutoff, lfc = lfcCutoff))
 #        S_cType R_cType CP_gType DSC_gType
-# Down       522     426     1477      1434
-# NotSig   25975   25396    24198     23514
-# Up         309     984     1131      1858
+# Down       425     400     1531      1539
+# NotSig   26100   25502    23893     23275
+# Up         247     870     1348      1958
+
 
 focus_terms <- colnames(cont_matrix)
 
 results <-
   map_df(focus_terms, function(f) {
-    tmp <- topTable(fit, coef = f, number = Inf, 
+    tmp <- topTable(fit3, coef = f, number = Inf, 
                     sort.by = "none", adjust.method = "fdr")
     tmp$focus_term <- f
     tmp$cds <- row.names(tmp)
