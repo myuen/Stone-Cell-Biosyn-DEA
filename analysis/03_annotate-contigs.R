@@ -1,63 +1,90 @@
 library(dplyr)
+library(purrr)
+library(rhmmer)
+library(tidyr)
 
-sigDE <- read.table("results/StoneCellBiosyn_pooledRun.sigDE.25oct.txt", 
-                       header = TRUE, stringsAsFactors = FALSE)
+
+### Read DEA results
+sigDE <- read.table("results/StoneCellBiosyn.sigDE_stats.21May.txt", 
+                    header = TRUE, stringsAsFactors = FALSE)
 str(sigDE)
-# 'data.frame':	6565 obs. of  5 variables:
+# 'data.frame':	8141 obs. of  4 variables:
 
 
-cType_DE <- subset(sigDE, sigDE$logFC > 0 & 
-                     (sigDE$focus == "H898_cType" | sigDE$focus == "Q903_cType"))
-cType_DE <- cType_DE %>% select("contig", "focus")
-str(cType_DE)
-# 'data.frame':	1021 obs. of  2 variables:
+### Read BLAST results for all DE contigs
+blast <- read.table("results/sigDE.blastpNR.txt", header = TRUE, 
+                    sep = "\t", quote = "", stringsAsFactors = FALSE)
 
-interx <- cType_DE[(duplicated(cType_DE$contig)), "contig"]
-length(interx)
-# [1] 70
+blast <- blast %>% select(qseqid, sseqid, evalue, salltitles)
 
-h898_excl <- cType_DE %>% filter(!contig %in% interx & focus == "H898_cType") %>% 
-  mutate(set = "H898_excl") %>% select(contig, set) %>% distinct()
-intersection <- cType_DE %>% filter(contig %in% interx) %>% mutate(set = "intersection") %>% 
-  select(contig, set) %>% distinct()
-q903_excl <- cType_DE %>% filter(!contig %in% interx & focus == "Q903_cType") %>% 
-  mutate(set = "Q903_excl") %>% select(contig, set) %>% distinct()
+# Rename column for easier joining downstream
+colnames(blast)[1] <- "cds"
+str(blast)
+# 'data.frame':	41437 obs. of  4 variables:
 
 
-cType_DE <- rbind((rbind(h898_excl, intersection)), q903_excl)
-dim(cType_DE)
-# [1] 951   2
+blast_flattened <- blast %>% 
+  group_by(cds) %>% 
+  nest()
 
-table(cType_DE$set)
-#    H898_excl intersection    Q903_excl 
-#          738           70          143 
+blast_flattened$data <- map(blast_flattened$data, function(x){
+  # Concatenate BLAST hits and delimit by ';' 
+  x %>% select (sseqid, salltitles) %>% 
+    summarise(accs = paste(sseqid, collapse=";"),
+              annots = paste(salltitles, collapse = ";"))
+})
 
-
-annot <- read.table("data/cType_DE.blastpNR.txt", header = TRUE, sep = "\t", quote = "",
-                    stringsAsFactors = FALSE)
-annot <- annot[ ,c("qseqid", "salltitles")]
-str(annot)
-# 'data.frame':	12940 obs. of  2 variables:
-
-
-concatAnnot <- function(x) {
-  title <- x$salltitles
-  # title <- gsub('<>', " ", annot)
-  return (paste0(title, collapse = " ; "))
-}
+blast_flattened <- blast_flattened %>% unnest(c(data))
+str(blast_flattened)
+# Classes ‘grouped_df’, ‘tbl_df’, ‘tbl’ and 'data.frame':	4347 obs. of  3 variables:
 
 
-annotsCollapsed <-
-  ddply(annot, ~ qseqid, concatAnnot)
-colnames(annotsCollapsed) <- c("contig", "annot")
-str(annotsCollapsed)
-# 'data.frame':	1321 obs. of  2 variables:
+sigDE_annot <- left_join(sigDE, blast_flattened)
+# Joining, by = "cds"
+
+str(sigDE_annot)
+# 'data.frame':	8141 obs. of  6 variables:
 
 
-merged <- merge(cType_DE, annotsCollapsed, by.x = "contig", by.y = "contig", all.x = TRUE)
-str(merged)
-# 'data.frame':	951 obs. of  3 variables:
+### Read HMMscan output
+pfam <- read_domtblout("data/pfam.domtblout")
+str(pfam)
+# Classes ‘tbl_df’, ‘tbl’ and 'data.frame':     857084 obs. of  23 variables:
 
+# Only keep pfam with e-value less than 1e-10
+pfam <- pfam %>% filter(sequence_evalue <= 1e-10) %>% 
+  select(query_name, domain_accession) %>% unique()
+str(pfam)
+# Classes ‘tbl_df’, ‘tbl’ and 'data.frame':     77458 obs. of  2 variables:
 
-write.table(merged, file = "results/StoneCellBiosyn.cType_DE.annot.txt",
+# Flatten pfam accession from multiple to a single line for each query
+pfam_flattened <- pfam %>% 
+  select (query_name, domain_accession) %>% 
+  group_by(query_name) %>%
+  summarise(pfam_accs = paste(domain_accession, collapse=";")) %>%
+  as.data.frame()
+
+# TransDecoder ID was renamed after HMMscan so we need 
+# the conversion from old ID to new ID
+id_transform <- read.delim("data/id_transform.txt", 
+                           header = FALSE, stringsAsFactors = FALSE)
+# Rename column for easier join later
+colnames(id_transform) <- c("query_name", "cds")
+
+pfam_flattened <- 
+  left_join(pfam_flattened, id_transform) %>%
+  select(cds, pfam_accs)
+# Joining, by = "query_name"
+
+str(pfam_flattened)
+# 'data.frame': 43880 obs. of  2 variables:
+
+sigDE_annot <- left_join(sigDE_annot, pfam_flattened)
+# Joining, by = "cds"
+
+str(sigDE_annot)
+# 'data.frame':	8141 obs. of  7 variables:
+
+# Supplementary Table 1
+write.table(sigDE_annot, "results/StoneCellBiosyn.sigDE.annot.22May.txt",
             row.names = FALSE, col.names = TRUE, sep = "\t", quote = FALSE)
