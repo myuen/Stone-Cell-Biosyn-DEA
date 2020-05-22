@@ -20,10 +20,11 @@ names(rawFiles) <- libNames
 ## Read in all Salmon data
 system.time(
   myBigList <- map(rawFiles, function(x) {
-    content <- read.table(x, header = TRUE, colClasses = c("character", rep("numeric", 4)))
+    content <- 
+      read.table(x, header = TRUE, colClasses = c("character", rep("numeric", 4)))
     
     # Only extract columns that will be use for analysis
-    content <- select(content, Name, TPM)
+    content <- select(content, Name, NumReads)
     
     # Rename colname to "CDS" and respective library name
     colnames(content) <- c("CDS", names(x))
