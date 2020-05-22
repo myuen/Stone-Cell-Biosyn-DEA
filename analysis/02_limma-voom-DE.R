@@ -155,15 +155,15 @@ str(results)
 # 'data.frame':	107224 obs. of  8 variables:
 
 table(results$focus_term)
-# CP_gType  R_cType  S_cType   SC_dev 
-#    26806    26806    26806    26806 
+#  CP_gType DSC_gType   R_cType   S_cType 
+#     26772     26772     26772     26772 
 
 # Reorganize columns
 results <- results %>% select(cds, logFC, adj.P.Val, focus_term)
 
 write.table(
   results, quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE,
-  "results/StoneCellBiosyn.all_stats.21May.txt"
+  "results/StoneCellBiosyn.all_stats.22May.txt"
 )
 
 
@@ -173,4 +173,4 @@ sigDE <- results %>%
 
 write.table(
   sigDE, quote = FALSE, sep = "\t", col.names = TRUE, row.names = FALSE,
-  "results/StoneCellBiosyn.sigDE_stats.21May.txt")
+  "results/StoneCellBiosyn.sigDE_stats.22May.txt")
