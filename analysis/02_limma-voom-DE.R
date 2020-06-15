@@ -23,9 +23,11 @@ pCutoff <- 0.05
 
 # Load raw Salmon quantification results
 raw <- 
-  read.table("data/consolidated-Salmon-counts.txt", header = TRUE, 
+  read.table("data/SCB-consolidated-Salmon-counts.txt", header = TRUE, 
              colClasses = c("character", rep("numeric", 12)))
+
 raw <- column_to_rownames(raw, "CDS")
+
 str(raw)
 # 'data.frame':	101973 obs. of  12 variables:
 
@@ -75,7 +77,7 @@ cpm <- cpm(x)
 
 write.table(
   cpm, 
-  "results/StoneCellBiosyn.normalized_cpm.lowExpFiltered.txt",
+  "results/SCB.normalized_cpm.lowExpFiltered.txt",
   row.names = TRUE, col.names = TRUE, sep = "\t", quote = FALSE)
 
 
@@ -121,7 +123,7 @@ v <- voom(x, modMat, plot = FALSE)
 
 
 p <- PCA_maker(expDes, v)
-ggsave("results/figures/Fig1a-LMD-PCA.22May.svg", plot = p, 
+ggsave("results/figures/Fig1a-SCB-PCA.15Jun.svg", plot = p, 
        height = 6, width = 6)
 
 
@@ -163,7 +165,7 @@ results <- results %>% select(cds, logFC, adj.P.Val, focus_term)
 
 write.table(
   results, quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE,
-  "results/StoneCellBiosyn.all_stats.22May.txt"
+  "results/SCB.all_stats.15Jun.txt"
 )
 
 
@@ -173,4 +175,4 @@ sigDE <- results %>%
 
 write.table(
   sigDE, quote = FALSE, sep = "\t", col.names = TRUE, row.names = FALSE,
-  "results/StoneCellBiosyn.sigDE_stats.22May.txt")
+  "results/SCB.sigDE_stats.15Jun.txt")
