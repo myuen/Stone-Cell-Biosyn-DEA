@@ -5,7 +5,7 @@ library(tidyr)
 
 
 ### Read DEA results
-sigDE <- read.table("results/StoneCellBiosyn.sigDE_stats.21May.txt", 
+sigDE <- read.table("results/StoneCellBiosyn.sigDE_stats.22May.txt", 
                     header = TRUE, stringsAsFactors = FALSE)
 str(sigDE)
 # 'data.frame':	8141 obs. of  4 variables:
@@ -20,7 +20,7 @@ blast <- blast %>% select(qseqid, sseqid, evalue, salltitles)
 # Rename column for easier joining downstream
 colnames(blast)[1] <- "cds"
 str(blast)
-# 'data.frame':	41437 obs. of  4 variables:
+# 'data.frame':	45825 obs. of  4 variables:
 
 
 blast_flattened <- blast %>% 
@@ -36,14 +36,14 @@ blast_flattened$data <- map(blast_flattened$data, function(x){
 
 blast_flattened <- blast_flattened %>% unnest(c(data))
 str(blast_flattened)
-# Classes ‘grouped_df’, ‘tbl_df’, ‘tbl’ and 'data.frame':	4347 obs. of  3 variables:
+# Classes ‘grouped_df’, ‘tbl_df’, ‘tbl’ and 'data.frame':	4584 obs. of  3 variables:
 
 
 sigDE_annot <- left_join(sigDE, blast_flattened)
 # Joining, by = "cds"
 
 str(sigDE_annot)
-# 'data.frame':	8141 obs. of  6 variables:
+# 'data.frame':	8318 obs. of  6 variables:
 
 
 ### Read HMMscan output
@@ -83,7 +83,7 @@ sigDE_annot <- left_join(sigDE_annot, pfam_flattened)
 # Joining, by = "cds"
 
 str(sigDE_annot)
-# 'data.frame':	8141 obs. of  7 variables:
+# 'data.frame':	8318 obs. of  7 variables:
 
 # Supplementary Table 1
 write.table(sigDE_annot, "results/StoneCellBiosyn.sigDE.annot.22May.txt",
