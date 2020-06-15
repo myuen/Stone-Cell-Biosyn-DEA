@@ -33,7 +33,7 @@ system.time(
 #    user  system elapsed 
 #   5.117   0.092   5.233 
 
-rawSalmonCounts <- rawSalmonCounts %>% 
+rawSalmonCounts <- myBigList %>% 
   select(1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24)
 
 colnames(rawSalmonCounts) <- c("CDS", names(rawFiles))
@@ -41,5 +41,5 @@ colnames(rawSalmonCounts) <- c("CDS", names(rawFiles))
 str(rawSalmonCounts)
 # Classes ‘tbl_df’, ‘tbl’ and 'data.frame':	101973 obs. of  13 variables:
 
-write.table(rawSalmonCounts, "data/consolidated-LMD-Salmon-counts.txt",
+write.table(rawSalmonCounts, "data/SCB-consolidated-Salmon-counts.txt",
             sep = "\t", quote = FALSE, row.names = FALSE)
