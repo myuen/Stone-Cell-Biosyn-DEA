@@ -5,11 +5,11 @@ library(tidyr)
 
 
 ### Read DEA results
-sigDE <- read.table("results/StoneCellBiosyn.sigDE_stats.22May.txt", 
+sigDE <- read.table("results/SCB.sigDE_stats.15Jun.txt", 
                     header = TRUE, stringsAsFactors = FALSE)
 str(sigDE)
-# 'data.frame':	8141 obs. of  4 variables:
-
+# 'data.frame':	8318 obs. of  4 variables:
+  
 
 ### Read BLAST results for all DE contigs
 blast <- read.table("results/sigDE.blastpNR.txt", header = TRUE, 
@@ -19,6 +19,7 @@ blast <- blast %>% select(qseqid, sseqid, evalue, salltitles)
 
 # Rename column for easier joining downstream
 colnames(blast)[1] <- "cds"
+
 str(blast)
 # 'data.frame':	45825 obs. of  4 variables:
 
@@ -36,7 +37,7 @@ blast_flattened$data <- map(blast_flattened$data, function(x){
 
 blast_flattened <- blast_flattened %>% unnest(c(data))
 str(blast_flattened)
-# Classes ‘grouped_df’, ‘tbl_df’, ‘tbl’ and 'data.frame':	4584 obs. of  3 variables:
+# tibble [4,584 × 3] (S3: grouped_df/tbl_df/tbl/data.frame)
 
 
 sigDE_annot <- left_join(sigDE, blast_flattened)
@@ -55,7 +56,7 @@ str(pfam)
 pfam <- pfam %>% filter(sequence_evalue <= 1e-10) %>% 
   select(query_name, domain_accession) %>% unique()
 str(pfam)
-# Classes ‘tbl_df’, ‘tbl’ and 'data.frame':     77458 obs. of  2 variables:
+# tibble [77,458 × 2] (S3: tbl_df/tbl/data.frame)
 
 # Flatten pfam accession from multiple to a single line for each query
 pfam_flattened <- pfam %>% 
@@ -86,5 +87,5 @@ str(sigDE_annot)
 # 'data.frame':	8318 obs. of  7 variables:
 
 # Supplementary Table 1
-write.table(sigDE_annot, "results/StoneCellBiosyn.sigDE.annot.22May.txt",
+write.table(sigDE_annot, "results/SCB.sigDE_annotated.15Jun.txt",
             row.names = FALSE, col.names = TRUE, sep = "\t", quote = FALSE)
