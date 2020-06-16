@@ -4,7 +4,7 @@ library(stringr)
 
 
 # Marshal output files from Salmon for LMD libraries
-rawFiles <- list.files("data/LMD-Salmon-Oct19", full.names = TRUE)
+rawFiles <- list.files("data/SCB-Salmon-Oct19", full.names = TRUE)
 
 ## Extract library namne from filename
 libNames <- str_extract(basename(rawFiles), "\\d{3}_\\w{2,3}_\\w{4}")
@@ -21,7 +21,8 @@ names(rawFiles) <- libNames
 system.time(
   myBigList <- map_dfc(rawFiles, function(x) {
     content <- 
-      read.table(x, header = TRUE, colClasses = c("character", rep("numeric", 4)))
+      read.table(x, header = TRUE, 
+                 colClasses = c("character", rep("numeric", 4)))
     
     # Only extract columns that will be use for analysis
     content <- content %>% select(Name, NumReads)
