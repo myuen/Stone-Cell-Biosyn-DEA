@@ -5,7 +5,7 @@ library(tidyr)
 
 
 ### Read DEA results
-sigDE <- read.table("results/SCB.sigDE_stats.15Jun.txt", 
+sigDE <- read.table("results/SCB.sigDE_stats.16Jun.txt", 
                     header = TRUE, stringsAsFactors = FALSE)
 str(sigDE)
 # 'data.frame':	8318 obs. of  4 variables:
@@ -36,6 +36,7 @@ blast_flattened$data <- map(blast_flattened$data, function(x){
 })
 
 blast_flattened <- blast_flattened %>% unnest(c(data))
+
 str(blast_flattened)
 # tibble [4,584 × 3] (S3: grouped_df/tbl_df/tbl/data.frame)
 
@@ -50,7 +51,7 @@ str(sigDE_annot)
 ### Read HMMscan output
 pfam <- read_domtblout("data/pfam.domtblout")
 str(pfam)
-# Classes ‘tbl_df’, ‘tbl’ and 'data.frame':     857084 obs. of  23 variables:
+# tibble [857,084 × 23] (S3: tbl_df/tbl/data.frame)
 
 # Only keep pfam with e-value less than 1e-10
 pfam <- pfam %>% filter(sequence_evalue <= 1e-10) %>% 
@@ -69,6 +70,7 @@ pfam_flattened <- pfam %>%
 # the conversion from old ID to new ID
 id_transform <- read.delim("data/id_transform.txt", 
                            header = FALSE, stringsAsFactors = FALSE)
+
 # Rename column for easier join later
 colnames(id_transform) <- c("query_name", "cds")
 
@@ -87,5 +89,5 @@ str(sigDE_annot)
 # 'data.frame':	8318 obs. of  7 variables:
 
 # Supplementary Table 1
-write.table(sigDE_annot, "results/SCB.sigDE_annotated.15Jun.txt",
+write.table(sigDE_annot, "results/SCB.sigDE_annotated.16Jun.txt",
             row.names = FALSE, col.names = TRUE, sep = "\t", quote = FALSE)
