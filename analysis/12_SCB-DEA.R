@@ -32,11 +32,15 @@ str(raw)
 # 'data.frame':	101973 obs. of  12 variables:
 
 
-# Load experimental design
-expDes <- read.table("data/stone_cell_biosyn_exp_design.tsv", 
-                     header = TRUE)
-expDes$cType <- relevel(expDes$cType, ref = "CP")
-expDes$gType <- relevel(expDes$gType, ref = "S")
+# Create experimental design
+expDes <- data.frame(sample = colnames(raw),
+                     gType = factor(c(rep("R", 6), rep("S", 6)),
+                                    levels = c("S", "R")),
+                     cType = factor(rep(c(rep("CP", 3), rep("DSC", 3)), 2),
+                                    levels = c("CP", "DSC")),
+                     bioRep = as.numeric(rep(c(1, 2, 3), 4)))
+
+expDes$group <- with(expDes, interaction(gType, cType))
 
 #        sample gType cType bioRep group
 # 1   R_CP_rep1     R    CP      1  R.CP
@@ -123,7 +127,7 @@ v <- voom(x, modMat, plot = FALSE)
 
 
 p <- PCA_maker(expDes, v)
-ggsave("results/figures/Fig1a-SCB-PCA.15Jun.svg", plot = p, 
+ggsave("results/figures/Fig1a-SCB-PCA.16Jun.svg", plot = p, 
        height = 6, width = 6)
 
 
@@ -165,7 +169,7 @@ results <- results %>% select(cds, logFC, adj.P.Val, focus_term)
 
 write.table(
   results, quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE,
-  "results/SCB.all_stats.15Jun.txt"
+  "results/SCB.all_stats.16Jun.txt"
 )
 
 
@@ -175,4 +179,4 @@ sigDE <- results %>%
 
 write.table(
   sigDE, quote = FALSE, sep = "\t", col.names = TRUE, row.names = FALSE,
-  "results/SCB.sigDE_stats.15Jun.txt")
+  "results/SCB.sigDE_stats.16Jun.txt")
