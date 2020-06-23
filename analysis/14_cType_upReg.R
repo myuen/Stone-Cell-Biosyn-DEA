@@ -1,3 +1,6 @@
+### To identify contigs that are up-regulated in DSC in either 
+###  or both genotype
+
 library(dplyr)
 
 sigDE <- read.table("results/SCB.sigDE_annotated.16Jun.txt",
@@ -64,5 +67,5 @@ str(DSC_upReg_annot)
 # 'data.frame':	1042 obs. of  5 variables:
 
 write.table(DSC_upReg_annot, 
-            "results/SCB.DSC_upReg.annot.15Jun.txt",
+            "results/SCB.DSC_upReg.annot.16Jun.txt",
             row.names = FALSE, col.names = TRUE, sep = "\t", quote = FALSE)
