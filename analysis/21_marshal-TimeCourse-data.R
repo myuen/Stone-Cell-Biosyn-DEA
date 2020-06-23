@@ -4,7 +4,7 @@ library(stringr)
 
 
 # Marshal output files from Salmon for TimeCourse libraries
-rawFiles <- list.files("data/TimeCourse-Salmon-7Apr2020", full.names = TRUE)
+rawFiles <- list.files("data/SCTC-Salmon-7Apr2020", full.names = TRUE)
 
 # Extract library namne from filename
 libNames <- str_replace(basename(rawFiles), "_quant.sf", "")
@@ -28,7 +28,8 @@ names(rawFiles) <- libNames
 system.time(
   myBigList <- map_dfc(rawFiles, function(x) {
     content <- 
-      read.table(x, header = TRUE, colClasses = c("character", rep("numeric", 4)))
+      read.table(x, header = TRUE, 
+                 colClasses = c("character", rep("numeric", 4)))
     
     # Only extract columns that will be use for analysis
     content <- content %>% select(Name, NumReads)
