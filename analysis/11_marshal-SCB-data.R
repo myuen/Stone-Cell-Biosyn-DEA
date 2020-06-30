@@ -1,7 +1,9 @@
 library(dplyr)
 library(purrr)
 library(stringr)
+library(tibble)
 
+options(digits = 8)
 
 # Marshal output files from Salmon for LMD libraries
 rawFiles <- list.files("data/SCB-Salmon-Oct19", full.names = TRUE)
@@ -23,25 +25,26 @@ system.time(
     content <- 
       read.table(x, header = TRUE, 
                  colClasses = c("character", rep("numeric", 4)))
+
+    content <- content %>% column_to_rownames("Name")
     
     # Only extract columns that will be use for analysis
-    content <- content %>% select(Name, NumReads)
-    
+    content <- content %>% select(NumReads)
+
     # Rename colname to "CDS" and respective library name
-    colnames(content) <- c("CDS", names(x))
-    
+    colnames(content) <- names(x)
+
     return(content)
   }))
 #    user  system elapsed 
 #   5.117   0.092   5.233 
 
-rawSalmonCounts <- myBigList %>% 
-  select(1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24)
+myBigList <- myBigList %>% rownames_to_column("CDS")
 
-colnames(rawSalmonCounts) <- c("CDS", names(rawFiles))
+colnames(myBigList) <- c("CDS", names(rawFiles))
 
-str(rawSalmonCounts)
-# Classes ‘tbl_df’, ‘tbl’ and 'data.frame':	101973 obs. of  13 variables:
+str(myBigList)
+# 'data.frame':	101973 obs. of  13 variables:
 
-write.table(rawSalmonCounts, "data/SCB-consolidated-Salmon-counts.txt",
+write.table(myBigList, "data/SCB-consolidated-Salmon-counts.txt",
             sep = "\t", quote = FALSE, row.names = FALSE)
