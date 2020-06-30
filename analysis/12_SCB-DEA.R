@@ -5,7 +5,7 @@ require(purrr)
 require(tibble)
 
 
-source("analysis/helper01-PCA_maker.R")
+source("analysis/helper01_SCB-PCA-maker.R")
 
 
 ### Differential Expression Analysis on Sitka Spruce Cell type 
@@ -127,7 +127,7 @@ v <- voom(x, modMat, plot = FALSE)
 
 
 p <- PCA_maker(expDes, v)
-ggsave("results/figures/Fig1a-SCB-PCA.16Jun.svg", plot = p, 
+ggsave("results/figures/Fig1a-SCB-PCA.30Jun.svg", plot = p, 
        height = 6, width = 6)
 
 
@@ -158,18 +158,19 @@ results <-
   })
 
 str(results)
-# 'data.frame':	107224 obs. of  8 variables:
+# 'data.frame':	107088 obs. of  8 variables:
 
 table(results$focus_term)
 #  CP_gType DSC_gType   R_cType   S_cType 
 #     26772     26772     26772     26772 
 
 # Reorganize columns
-results <- results %>% select(cds, logFC, adj.P.Val, focus_term)
+results <- results %>% 
+  select(cds, logFC, adj.P.Val, focus_term)
 
 write.table(
   results, quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE,
-  "results/SCB.all_stats.16Jun.txt"
+  "results/SCB.all_stats.30Jun.txt"
 )
 
 
@@ -179,4 +180,4 @@ sigDE <- results %>%
 
 write.table(
   sigDE, quote = FALSE, sep = "\t", col.names = TRUE, row.names = FALSE,
-  "results/SCB.sigDE_stats.16Jun.txt")
+  "results/SCB.sigDE_stats.30Jun.txt")
