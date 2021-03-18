@@ -3,9 +3,9 @@ require(dplyr)
 require(limma)
 require(purrr)
 require(tibble)
+require(tximport)
 
-
-source("analysis/helper01_SCB-PCA-maker.R")
+# source("analysis/helper01_SCB-PCA-maker.R")
 
 
 ### Differential Expression Analysis on Sitka Spruce Cell type 
@@ -21,24 +21,49 @@ lfcCutoff <- 2
 pCutoff <- 0.05
 
 
-# Load raw Salmon quantification results
-raw <- 
-  read.table("data/SCB-consolidated-Salmon-counts.txt", header = TRUE, 
-             colClasses = c("character", rep("numeric", 12)))
+# Import file with tximport
+quant.files <-
+  dir("data/SCB-Salmon-Oct19",
+      pattern = "quant.sf",
+      full.names = TRUE,
+      recursive = TRUE,
+      include.dirs = FALSE)
 
-raw <- column_to_rownames(raw, "CDS")
+samples <-
+  quant.files %>%
+  str_replace("data/SCB-Salmon-Oct19/", "") %>%
+  str_replace("_novRun_salmon_quant\\.sf", "")
 
-str(raw)
-# 'data.frame':	101973 obs. of  12 variables:
+# Rename samples.  
+# 898 = R (resistance genotype)
+# 903 = S (susceptible genotype)
+samples <- samples %>% str_replace("898", "R")
+samples <- samples %>% str_replace("903", "S")
+
+samples_2_files <-
+  data.frame(samples, quant.files,
+             stringsAsFactors = FALSE)
+
+txi <-
+  tximport(samples_2_files[, "quant.files"],
+           type = "salmon", txOut = TRUE, varReduce = TRUE,
+           countsFromAbundance = "lengthScaledTPM")
+
+colnames(txi$counts) <- samples_2_files$samples
+
 
 
 # Create experimental design
-expDes <- data.frame(sample = colnames(raw),
-                     gType = factor(c(rep("R", 6), rep("S", 6)),
-                                    levels = c("S", "R")),
-                     cType = factor(rep(c(rep("CP", 3), rep("DSC", 3)), 2),
-                                    levels = c("CP", "DSC")),
-                     bioRep = as.numeric(rep(c(1, 2, 3), 4)))
+expDes <- 
+  data.frame(
+    sample = samples,
+    gType = factor(c(samples %>% str_extract("^\\w")),
+                   levels = c("S", "R")),
+    cType = factor(c(samples %>% 
+                       str_extract("_\\w{2,3}_") %>% 
+                       str_replace_all("_", "")),
+                            levels = c("CP", "DSC")),
+             bioRep = as.numeric(samples %>% str_extract("\\d$")))
 
 expDes$group <- with(expDes, interaction(gType, cType))
 
@@ -58,7 +83,8 @@ expDes$group <- with(expDes, interaction(gType, cType))
 
 
 # Load counts into DGEList object from edgeR package.
-x <- DGEList(counts = raw, group = expDes$group)
+# x <- DGEList(counts = raw, group = expDes$group)
+x <- DGEList(counts = txi$counts, group = expDes$group)
 
 # Keep only genes with at least 1 count-per-million reads (cpm) in 
 # at least 3 samples
@@ -66,21 +92,21 @@ dim(x)
 # [1] 101973     12
 
 # Filter low-expression contigs
-x <- x[(rowSums(cpm(x) > 1) >= 3), ]
+y <- x[(rowSums(cpm(x) > 1) >= 3), ]
 
-dim(x)
-# [1] 26772    12
+dim(y)
+# [1] 26787    12
 
 # Reset depth
-x$samples$lib.size <- colSums(x$counts)
+y$samples$lib.size <- colSums(y$counts)
 
 # TMM Normalization by Depth
-x <- calcNormFactors(x)
+y <- calcNormFactors(y)
 
-cpm <- cpm(x)
+scb_cpm <- cpm(y)
 
 write.table(
-  cpm, 
+  scb_cpm,
   "results/SCB.normalized_cpm.lowExpFiltered.txt",
   row.names = TRUE, col.names = TRUE, sep = "\t", quote = FALSE)
 
@@ -109,13 +135,10 @@ colnames(modMat) <- gsub(":", "_", colnames(modMat))
 cont_matrix <- makeContrasts(
   # 1. DE between CP and DSC in susceptible genotype (Q903)
   S_cType = cTypeDSC,
-  
   # 2. DE between CP and DSC in resistance genotype (H898)
   R_cType = cTypeDSC + gTypeR_cTypeDSC,
-  
   # 3. DE in CP between genotype
   CP_gType = gTypeR,
-  
   # 4. DE in DSC between genotype
   DSC_gType = gTypeR + gTypeR_cTypeDSC,
   levels = modMat)
@@ -123,12 +146,13 @@ cont_matrix <- makeContrasts(
 
 # voom transformation
 # voom-plot
-v <- voom(x, modMat, plot = FALSE)
+# v <- voom(x, modMat, plot = FALSE)
+v <- voom(y, modMat, plot = TRUE)
 
 
-p <- PCA_maker(expDes, v)
-ggsave("results/figures/Fig1a-SCB-PCA.30Jun.svg", plot = p, 
-       height = 6, width = 6)
+# p <- PCA_maker(expDes, v)
+# ggsave("results/figures/Fig1a-SCB-PCA.30Jun.svg", plot = p, 
+       # height = 6, width = 6)
 
 
 # Linear modelling
@@ -141,10 +165,9 @@ fit3 <- eBayes(fit2)
 summary(decideTests(fit3, method = "separate", adjust.method = "fdr", 
                     p.value = pCutoff, lfc = lfcCutoff))
 #        S_cType R_cType CP_gType DSC_gType
-# Down       425     400     1531      1539
-# NotSig   26100   25502    23893     23275
-# Up         247     870     1348      1958
-
+# Down       424     404     1530      1538
+# NotSig   26119   25520    23903     23286
+# Up         244     863     1354      1963
 
 focus_terms <- colnames(cont_matrix)
 
@@ -162,7 +185,7 @@ str(results)
 
 table(results$focus_term)
 #  CP_gType DSC_gType   R_cType   S_cType 
-#     26772     26772     26772     26772 
+#     26787     26787     26787     26787 
 
 # Reorganize columns
 results <- results %>% 
@@ -170,7 +193,7 @@ results <- results %>%
 
 write.table(
   results, quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE,
-  "results/SCB.all_stats.30Jun.txt"
+  "results/SCB.all_stats.18March.txt"
 )
 
 
@@ -180,4 +203,5 @@ sigDE <- results %>%
 
 write.table(
   sigDE, quote = FALSE, sep = "\t", col.names = TRUE, row.names = FALSE,
-  "results/SCB.sigDE_stats.30Jun.txt")
+  "results/SCB.sigDE_stats.18March.txt"
+  )
