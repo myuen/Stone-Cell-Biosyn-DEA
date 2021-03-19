@@ -5,14 +5,14 @@ library(tidyr)
 
 
 ### Read DEA results
-sigDE <- read.table("results/SCB.sigDE_stats.16Jun.txt", 
+sigDE <- read.table("results/SCB.sigDE_stats.18March.txt", 
                     header = TRUE, stringsAsFactors = FALSE)
 str(sigDE)
-# 'data.frame':	8318 obs. of  4 variables:
-  
+# 'data.frame':	8320 obs. of  4 variables:
+
 
 ### Read BLAST results for all DE contigs
-blast <- read.table("results/sigDE.blastpNR.txt", header = TRUE, 
+blast <- read.table("results/SCB.sigDE.blastpNR.txt", header = TRUE, 
                     sep = "\t", quote = "", stringsAsFactors = FALSE)
 
 blast <- blast %>% select(qseqid, sseqid, evalue, salltitles)
@@ -21,14 +21,15 @@ blast <- blast %>% select(qseqid, sseqid, evalue, salltitles)
 colnames(blast)[1] <- "cds"
 
 str(blast)
-# 'data.frame':	45825 obs. of  4 variables:
+# 'data.frame':	45906 obs. of  4 variables:
 
 
 blast_flattened <- blast %>% 
   group_by(cds) %>% 
   nest()
 
-blast_flattened$data <- map(blast_flattened$data, function(x){
+blast_flattened$data <- 
+  map(blast_flattened$data, function(x){
   # Concatenate BLAST hits and delimit by ';' 
   x %>% select (sseqid, salltitles) %>% 
     summarise(accs = paste(sseqid, collapse=";"),
@@ -38,14 +39,14 @@ blast_flattened$data <- map(blast_flattened$data, function(x){
 blast_flattened <- blast_flattened %>% unnest(c(data))
 
 str(blast_flattened)
-# tibble [4,584 × 3] (S3: grouped_df/tbl_df/tbl/data.frame)
+# grouped_df [4,591 × 3] (S3: grouped_df/tbl_df/tbl/data.frame)
 
 
 sigDE_annot <- left_join(sigDE, blast_flattened)
 # Joining, by = "cds"
 
 str(sigDE_annot)
-# 'data.frame':	8318 obs. of  6 variables:
+# 'data.frame':	8320 obs. of  6 variables:
 
 
 ### Read HMMscan output
@@ -54,8 +55,11 @@ str(pfam)
 # tibble [857,084 × 23] (S3: tbl_df/tbl/data.frame)
 
 # Only keep pfam with e-value less than 1e-10
-pfam <- pfam %>% filter(sequence_evalue <= 1e-10) %>% 
-  select(query_name, domain_accession) %>% unique()
+pfam <- pfam %>% 
+  filter(sequence_evalue <= 1e-10) %>% 
+  select(query_name, domain_accession) %>% 
+  unique()
+
 str(pfam)
 # tibble [77,458 × 2] (S3: tbl_df/tbl/data.frame)
 
@@ -68,8 +72,9 @@ pfam_flattened <- pfam %>%
 
 # TransDecoder ID was renamed after HMMscan so we need 
 # the conversion from old ID to new ID
-id_transform <- read.delim("data/id_transform.txt", 
-                           header = FALSE, stringsAsFactors = FALSE)
+id_transform <- 
+  read.delim("data/id_transform.txt", 
+             header = FALSE, stringsAsFactors = FALSE)
 
 # Rename column for easier join later
 colnames(id_transform) <- c("query_name", "cds")
@@ -89,5 +94,5 @@ str(sigDE_annot)
 # 'data.frame':	8318 obs. of  7 variables:
 
 # Supplementary Table 1
-write.table(sigDE_annot, "results/SCB.sigDE_annotated.16Jun.txt",
+write.table(sigDE_annot, "results/SCB.sigDE_annotated.19March.txt",
             row.names = FALSE, col.names = TRUE, sep = "\t", quote = FALSE)
