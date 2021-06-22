@@ -1,11 +1,13 @@
-require(edgeR)
-require(dplyr)
-require(limma)
-require(purrr)
-require(tibble)
-require(tximport)
+library(edgeR)
+library(dplyr)
+library(limma)
+library(purrr)
+library(stringr)
+library(tibble)
+library(tximport)
 
-# source("analysis/helper01_SCB-PCA-maker.R")
+
+source("analysis/helper01_PCA-maker.R")
 
 
 ### Differential Expression Analysis on Sitka Spruce Cell type 
@@ -23,16 +25,14 @@ pCutoff <- 0.05
 
 # Import file with tximport
 quant.files <-
-  dir("data/SCB-Salmon-Oct19",
+  dir("data/SCB_Salmon-19Oct",
       pattern = "quant.sf",
       full.names = TRUE,
       recursive = TRUE,
       include.dirs = FALSE)
 
 samples <-
-  quant.files %>%
-  str_replace("data/SCB-Salmon-Oct19/", "") %>%
-  str_replace("_novRun_salmon_quant\\.sf", "")
+  str_extract(quant.files, "\\d{3}_\\w+_rep\\d")
 
 # Rename samples.  
 # 898 = R (resistance genotype)
@@ -40,17 +40,14 @@ samples <-
 samples <- samples %>% str_replace("898", "R")
 samples <- samples %>% str_replace("903", "S")
 
-samples_2_files <-
-  data.frame(samples, quant.files,
-             stringsAsFactors = FALSE)
+names(quant.files) <- samples
 
 txi <-
-  tximport(samples_2_files[, "quant.files"],
-           type = "salmon", txOut = TRUE, varReduce = TRUE,
+  tximport(quant.files,
+           type = "salmon",
+           txOut = TRUE,
+           varReduce = TRUE,
            countsFromAbundance = "lengthScaledTPM")
-
-colnames(txi$counts) <- samples_2_files$samples
-
 
 
 # Create experimental design
@@ -83,15 +80,15 @@ expDes$group <- with(expDes, interaction(gType, cType))
 
 
 # Load counts into DGEList object from edgeR package.
-# x <- DGEList(counts = raw, group = expDes$group)
-x <- DGEList(counts = txi$counts, group = expDes$group)
+x <- DGEList(counts = txi$counts, 
+             group = expDes$group)
 
-# Keep only genes with at least 1 count-per-million reads (cpm) in 
-# at least 3 samples
 dim(x)
 # [1] 101973     12
 
-# Filter low-expression contigs
+
+# Filter low-expression contigs.  Keep only genes with at 
+# least 1 count-per-million reads (cpm) in at least 3 samples
 y <- x[(rowSums(cpm(x) > 1) >= 3), ]
 
 dim(y)
@@ -107,15 +104,33 @@ scb_cpm <- cpm(y)
 
 write.table(
   scb_cpm,
-  "results/SCB.normalized_cpm.lowExpFiltered.txt",
+  "results/SCB.tmm_normalized_cpm.txt",
   row.names = TRUE, col.names = TRUE, sep = "\t", quote = FALSE)
 
 
 # make model matrix
 # Interaction design
-modMat <- model.matrix(~ gType * cType, expDes)
-colnames(modMat) <- gsub("[()]", "", colnames(modMat))
-colnames(modMat) <- gsub(":", "_", colnames(modMat))
+# modMat <- model.matrix(~ gType * cType, expDes)
+# colnames(modMat) <- gsub("[()]", "", colnames(modMat))
+# colnames(modMat) <- gsub(":", "_", colnames(modMat))
+
+modMat <- model.matrix(~ 0 + expDes$group)
+colnames(modMat) <- colnames(modMat) %>% 
+  str_replace("expDes\\$group", "")
+
+#    S.CP R.CP S.DSC R.DSC
+# 1     0    1     0     0
+# 2     0    1     0     0
+# 3     0    1     0     0
+# 4     0    0     0     1
+# 5     0    0     0     1
+# 6     0    0     0     1
+# 7     1    0     0     0
+# 8     1    0     0     0
+# 9     1    0     0     0
+# 10    0    0     1     0
+# 11    0    0     1     0
+# 12    0    0     1     0
 
 #    Intercept gTypeR cTypeDSC gTypeR_cTypeDSC
 # 1          1      1        0               0
@@ -132,27 +147,32 @@ colnames(modMat) <- gsub(":", "_", colnames(modMat))
 # 12         1      0        1               0
 
 
+# cont_matrix <- makeContrasts(
+#   # 1. DE between CP and DSC in susceptible genotype (Q903)
+#   S_cType = cTypeDSC,
+#   # 2. DE between CP and DSC in resistance genotype (H898)
+#   R_cType = cTypeDSC + gTypeR_cTypeDSC,
+#   # 3. DE in CP between genotype
+#   # CP_gType = gTypeR,
+#   # 4. DE in DSC between genotype
+#   # DSC_gType = gTypeR + gTypeR_cTypeDSC,
+#   levels = modMat)
+
 cont_matrix <- makeContrasts(
   # 1. DE between CP and DSC in susceptible genotype (Q903)
-  S_cType = cTypeDSC,
+  S_cType = S.DSC - S.CP,
   # 2. DE between CP and DSC in resistance genotype (H898)
-  R_cType = cTypeDSC + gTypeR_cTypeDSC,
-  # 3. DE in CP between genotype
-  CP_gType = gTypeR,
-  # 4. DE in DSC between genotype
-  DSC_gType = gTypeR + gTypeR_cTypeDSC,
+  R_cType = R.DSC - R.CP,
   levels = modMat)
 
 
 # voom transformation
-# voom-plot
-# v <- voom(x, modMat, plot = FALSE)
 v <- voom(y, modMat, plot = TRUE)
 
 
-# p <- PCA_maker(expDes, v)
-# ggsave("results/figures/Fig1a-SCB-PCA.30Jun.svg", plot = p, 
-       # height = 6, width = 6)
+p <- PCA_maker(expDes, v)
+ggsave("results/figures/SCB-PCA.15Jun.svg", plot = p,
+        height = 6, width = 6)
 
 
 # Linear modelling
@@ -164,6 +184,12 @@ fit3 <- eBayes(fit2)
 
 summary(decideTests(fit3, method = "separate", adjust.method = "fdr", 
                     p.value = pCutoff, lfc = lfcCutoff))
+
+#        S_cType R_cType
+# Down       424     486
+# NotSig   26119   25172
+# Up         244    1129
+
 #        S_cType R_cType CP_gType DSC_gType
 # Down       424     404     1530      1538
 # NotSig   26119   25520    23903     23286
@@ -181,9 +207,12 @@ results <-
   })
 
 str(results)
-# 'data.frame':	107088 obs. of  8 variables:
+# 'data.frame':	53574 obs. of  8 variables:
 
 table(results$focus_term)
+# R_cType S_cType 
+#   26787   26787 
+
 #  CP_gType DSC_gType   R_cType   S_cType 
 #     26787     26787     26787     26787 
 
@@ -193,7 +222,8 @@ results <- results %>%
 
 write.table(
   results, quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE,
-  "results/SCB.all_stats.18March.txt"
+  # "results/SCB.all_stats.18March.txt"
+  "results/SCB.all_stats.17Jun.txt"
 )
 
 
@@ -203,5 +233,21 @@ sigDE <- results %>%
 
 write.table(
   sigDE, quote = FALSE, sep = "\t", col.names = TRUE, row.names = FALSE,
-  "results/SCB.sigDE_stats.18March.txt"
-  )
+  # "results/SCB.sigDE_stats.18March.txt"
+  "results/SCB.sigDE_stats.17Jun.txt"
+)
+
+
+# Identify CDS that are up-regulated in developing 
+# stone cells in both genotypes
+upReg <- sigDE %>% filter(logFC >= 0) %>% select(cds) %>% distinct() %>% as.char()
+
+
+# Write out CDS ID to file
+write.table(
+  upReg,
+  "results/SCB.upRegDSC.17Jun.txt",
+  quote = FALSE,
+  col.names = FALSE,
+  row.names = FALSE
+)
