@@ -110,10 +110,6 @@ write.table(
 
 # make model matrix
 # Interaction design
-# modMat <- model.matrix(~ gType * cType, expDes)
-# colnames(modMat) <- gsub("[()]", "", colnames(modMat))
-# colnames(modMat) <- gsub(":", "_", colnames(modMat))
-
 modMat <- model.matrix(~ 0 + expDes$group)
 colnames(modMat) <- colnames(modMat) %>% 
   str_replace("expDes\\$group", "")
@@ -132,31 +128,6 @@ colnames(modMat) <- colnames(modMat) %>%
 # 11    0    0     1     0
 # 12    0    0     1     0
 
-#    Intercept gTypeR cTypeDSC gTypeR_cTypeDSC
-# 1          1      1        0               0
-# 2          1      1        0               0
-# 3          1      1        0               0
-# 4          1      1        1               1
-# 5          1      1        1               1
-# 6          1      1        1               1
-# 7          1      0        0               0
-# 8          1      0        0               0
-# 9          1      0        0               0
-# 10         1      0        1               0
-# 11         1      0        1               0
-# 12         1      0        1               0
-
-
-# cont_matrix <- makeContrasts(
-#   # 1. DE between CP and DSC in susceptible genotype (Q903)
-#   S_cType = cTypeDSC,
-#   # 2. DE between CP and DSC in resistance genotype (H898)
-#   R_cType = cTypeDSC + gTypeR_cTypeDSC,
-#   # 3. DE in CP between genotype
-#   # CP_gType = gTypeR,
-#   # 4. DE in DSC between genotype
-#   # DSC_gType = gTypeR + gTypeR_cTypeDSC,
-#   levels = modMat)
 
 cont_matrix <- makeContrasts(
   # 1. DE between CP and DSC in susceptible genotype (Q903)
@@ -190,11 +161,6 @@ summary(decideTests(fit3, method = "separate", adjust.method = "fdr",
 # NotSig   26119   25172
 # Up         244    1129
 
-#        S_cType R_cType CP_gType DSC_gType
-# Down       424     404     1530      1538
-# NotSig   26119   25520    23903     23286
-# Up         244     863     1354      1963
-
 focus_terms <- colnames(cont_matrix)
 
 results <-
@@ -213,8 +179,6 @@ table(results$focus_term)
 # R_cType S_cType 
 #   26787   26787 
 
-#  CP_gType DSC_gType   R_cType   S_cType 
-#     26787     26787     26787     26787 
 
 # Reorganize columns
 results <- results %>% 
@@ -233,14 +197,17 @@ sigDE <- results %>%
 
 write.table(
   sigDE, quote = FALSE, sep = "\t", col.names = TRUE, row.names = FALSE,
-  # "results/SCB.sigDE_stats.18March.txt"
   "results/SCB.sigDE_stats.17Jun.txt"
 )
 
 
 # Identify CDS that are up-regulated in developing 
 # stone cells in both genotypes
-upReg <- sigDE %>% filter(logFC >= 0) %>% select(cds) %>% distinct() %>% as.char()
+upReg <- sigDE %>% 
+  filter(logFC >= 0) %>% 
+  select(cds) %>% 
+  distinct() %>% 
+  as.char()
 
 
 # Write out CDS ID to file
