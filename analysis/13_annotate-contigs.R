@@ -1,98 +1,94 @@
 library(dplyr)
-library(purrr)
-library(rhmmer)
+# library(purrr)
+# library(rhmmer)
+library(stringr)
 library(tidyr)
 
 
 ### Read DEA results
-sigDE <- read.table("results/SCB.sigDE_stats.18March.txt", 
+sigDE <- read.table("results/SCB.sigDE_stats.17Jun.txt", 
                     header = TRUE, stringsAsFactors = FALSE)
 str(sigDE)
-# 'data.frame':	8320 obs. of  4 variables:
+# 'data.frame':	2283 obs. of  4 variables:
+
+
+# Identified contigs up-regulated in developing stone cells
+upReg <- sigDE %>% 
+  filter(logFC >= 2) %>%
+  select(cds, focus_term)
+
+str(upReg)
+# 'data.frame':	1373 obs. of  2 variables:
 
 
 ### Read BLAST results for all DE contigs
-blast <- read.table("results/SCB.sigDE.blastpNR.txt", header = TRUE, 
-                    sep = "\t", quote = "", stringsAsFactors = FALSE)
+blast <- read.table("results/SCB.upRegDSC.17Jun.blastpTAIR10.txt", 
+                    header = TRUE, sep = "\t", 
+                    quote = "", stringsAsFactors = FALSE)
 
-blast <- blast %>% select(qseqid, sseqid, evalue, salltitles)
+blast <- blast %>% 
+  select(qseqid, sseqid, salltitles) %>%
+  distinct()
 
 # Rename column for easier joining downstream
-colnames(blast)[1] <- "cds"
+colnames(blast)[1:2] <- c("cds", "locus_name")
+
+# Strip TAIR10 version ID from accession number
+blast$locus_name <- 
+  blast$locus_name %>% 
+  str_replace(".\\d$", "")
 
 str(blast)
-# 'data.frame':	45906 obs. of  4 variables:
+# 'data.frame':	1025 obs. of  3 variables:
 
 
-blast_flattened <- blast %>% 
-  group_by(cds) %>% 
-  nest()
-
-blast_flattened$data <- 
-  map(blast_flattened$data, function(x){
-  # Concatenate BLAST hits and delimit by ';' 
-  x %>% select (sseqid, salltitles) %>% 
-    summarise(accs = paste(sseqid, collapse=";"),
-              annots = paste(salltitles, collapse = ";"))
-})
-
-blast_flattened <- blast_flattened %>% unnest(c(data))
-
-str(blast_flattened)
-# grouped_df [4,591 × 3] (S3: grouped_df/tbl_df/tbl/data.frame)
-
-
-sigDE_annot <- left_join(sigDE, blast_flattened)
+# Join up-regulated contig ID with TAIR10 BLAST annotations
+sigDE_annot <- inner_join(upReg, blast)
 # Joining, by = "cds"
 
 str(sigDE_annot)
-# 'data.frame':	8320 obs. of  6 variables:
+# 'data.frame':	1086 obs. of  4 variables:
 
 
-### Read HMMscan output
-pfam <- read_domtblout("data/pfam.domtblout")
-str(pfam)
-# tibble [857,084 × 23] (S3: tbl_df/tbl/data.frame)
+# Refer to TAIR10 for column name header documentation
+# https://www.arabidopsis.org/download_files/GO_and_PO_Annotations/Gene_Ontology_Annotations/ATH_GO.README.txt
+tair10_go <- read.delim("data/ATH_GO_GOSLIM.txt", 
+                        sep = "\t", header = FALSE,  
+                        comment.char = "!",
+                        stringsAsFactors = FALSE)
 
-# Only keep pfam with e-value less than 1e-10
-pfam <- pfam %>% 
-  filter(sequence_evalue <= 1e-10) %>% 
-  select(query_name, domain_accession) %>% 
-  unique()
 
-str(pfam)
-# tibble [77,458 × 2] (S3: tbl_df/tbl/data.frame)
+# Column headers :explanation
+# 1. locus name: standard AGI convention name
+# 5. GO term: the actual string of letters corresponding to the GO ID
+# 6. GO ID: the unique identifier for a GO term.  
+# 8. Aspect: F=molecular function, C=cellular component, P=biological 13process. 
+# 9. GOslim term: high level GO term helps in functional categorization.
+tair10_go <- tair10_go[, c(1,5,6,8,9)]
 
-# Flatten pfam accession from multiple to a single line for each query
-pfam_flattened <- pfam %>% 
-  select (query_name, domain_accession) %>% 
-  group_by(query_name) %>%
-  summarise(pfam_accs = paste(domain_accession, collapse=";")) %>%
-  as.data.frame()
+colnames(tair10_go) <- 
+  c("locus_name", "GO_term", "GO_id", "Aspect", "GO_slim")
 
-# TransDecoder ID was renamed after HMMscan so we need 
-# the conversion from old ID to new ID
-id_transform <- 
-  read.delim("data/id_transform.txt", 
-             header = FALSE, stringsAsFactors = FALSE)
+tair10_go_bp <- tair10_go %>% filter(Aspect == "P")
 
-# Rename column for easier join later
-colnames(id_transform) <- c("query_name", "cds")
+str(tair10_go_bp)
+# 'data.frame':	147211 obs. of  5 variables:
 
-pfam_flattened <- 
-  left_join(pfam_flattened, id_transform) %>%
-  select(cds, pfam_accs)
-# Joining, by = "query_name"
-
-str(pfam_flattened)
-# 'data.frame': 43880 obs. of  2 variables:
-
-sigDE_annot <- left_join(sigDE_annot, pfam_flattened)
-# Joining, by = "cds"
+sigDE_annot <- inner_join(sigDE_annot, tair10_go_bp)
+# Joining, by = "locus_name"
 
 str(sigDE_annot)
-# 'data.frame':	8318 obs. of  7 variables:
+# 'data.frame':	8944 obs. of  8 variables:
 
-# Supplementary Table 1
-write.table(sigDE_annot, "results/SCB.sigDE_annotated.19March.txt",
-            row.names = FALSE, col.names = TRUE, sep = "\t", quote = FALSE)
+sigDE_annot %>% 
+  group_by(focus_term, GO_term) %>% 
+  select(GO_term) %>% 
+  count(sort = TRUE) %>% 
+  filter(focus_term == "S_cType")
+
+sigDE_annot %>% 
+  group_by(focus_term, GO_term) %>% 
+  select(GO_term) %>% 
+  count(sort = TRUE) %>% 
+  filter(focus_term == "R_cType")
+
