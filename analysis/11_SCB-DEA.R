@@ -97,6 +97,7 @@ dim(y)
 # Reset depth
 y$samples$lib.size <- colSums(y$counts)
 
+
 # TMM Normalization by Depth
 y <- calcNormFactors(y)
 
@@ -111,6 +112,7 @@ write.table(
 # make model matrix
 # Interaction design
 modMat <- model.matrix(~ 0 + expDes$group)
+
 colnames(modMat) <- colnames(modMat) %>% 
   str_replace("expDes\\$group", "")
 
@@ -140,6 +142,7 @@ cont_matrix <- makeContrasts(
 # voom transformation
 v <- voom(y, modMat, plot = TRUE)
 
+write.table(v$E, "results/SCB.log2cpm.txt", quote = FALSE, sep = "\t")
 
 p <- PCA_maker(expDes, v)
 ggsave("results/figures/SCB-PCA.15Jun.svg", plot = p,
@@ -206,9 +209,12 @@ write.table(
 upReg <- sigDE %>% 
   filter(logFC >= 0) %>% 
   select(cds) %>% 
-  distinct() %>% 
-  as.char()
+  distinct()
 
+upReg <- as.character(upReg[,"cds"])
+
+length(upReg)
+# [1] 1293
 
 # Write out CDS ID to file
 write.table(

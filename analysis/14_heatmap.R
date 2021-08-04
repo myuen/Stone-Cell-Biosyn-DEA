@@ -1,248 +1,208 @@
 library(dplyr)
 library(heatmaply)
 # library(tidyr)
+# library(orca)
 library(stringr)
 library(tibble)
 library(tidyselect)
+
+source("analysis/helper02_heatmap-maker.R")
 
 
 # Read statistics from differential expression analysis for LMD experiment
 sigDE <- read.delim("results/SCB.sigDE_stats.17Jun.txt",
                     stringsAsFactors = FALSE,
                     header = TRUE)
+
 str(sigDE)
 # 'data.frame':	2283 obs. of  4 variables:
 
 
 # We are only interested in those that are up-regulated in 
 # developing stone cells (DSC)
-upReg <- sigDE %>% filter(logFC >= 0)
+scb_upReg <- sigDE %>% filter(logFC >= 0)
+
+str(scb_upReg)
+# 'data.frame':	1373 obs. of  4 variables:
 
 
-# Identify those that are up-regulated only in Q903
-S_cType_excl <- upReg %>% 
+# Identify those that are up-regulated only in susceptible genotype
+scb.s_upReg <- scb_upReg %>% 
   filter(focus_term == "S_cType" & focus_term != "R_cType") %>%
   select("cds") %>%
   distinct()
 
-str(S_cType_excl)
-# 'data.frame':	244 obs. of  1 variable:
+scb.s_upReg <- as.character(scb.s_upReg$cds)
 
-# Identify those that are up-regulated only in H898
-R_cType_excl <- upReg %>% 
+str(scb.s_upReg)
+#  chr [1:244] 
+
+
+# Identify those that are up-regulated only in resistance genotype
+scb.r_upReg <- scb_upReg %>% 
   filter(focus_term != "S_cType" & focus_term == "R_cType") %>%
   select("cds") %>%
   distinct()
 
-str(R_cType_excl)
-# 'data.frame':	1129 obs. of  1 variable:
+scb.r_upReg <- as.character(scb.r_upReg$cds)
+
+str(scb.r_upReg)
+#  chr [1:1129]
 
 
-# Identify those that are up-regulated in both genotypes 
-commons <- upReg[duplicated(upReg$cds), "cds"]
+# Identify those that are up-regulated in both genotypes
+scb.rs_upReg <- scb_upReg[duplicated(scb_upReg$cds), "cds"]
 
-commons <- unique(commons)
-
-str(commons)
+str(scb.rs_upReg)
 # chr [1:80]
 
 
 # Read TMM normalized CPM from differentially expressed CDS from LMD experiment
-scb <- read.delim("results/SCB.tmm_normalized_cpm.txt")
+scb.cpm <- read.delim("results/SCB.tmm_normalized_cpm.txt")
 
-scb <- scb %>%
-  rownames_to_column("cds")
-
-
-# Can't get mutate or transmute to work with select(starts_with())
-scb <- scb %>%
-  rowwise() %>%
-  mutate(R_CP = mean(c(R_CP_rep1, R_CP_rep2, R_CP_rep3)))
-
-scb <- scb %>%
-  rowwise() %>%
-  mutate(R_DSC = mean(c(R_DSC_rep1, R_DSC_rep2, R_DSC_rep3)))
-
-scb <- scb %>%
-  rowwise() %>%
-  mutate(S_CP = mean(c(S_CP_rep1, S_CP_rep2, S_CP_rep3)))
-
-scb <- scb %>%
-  rowwise() %>%
-  mutate(S_DSC = mean(c(S_DSC_rep1, S_DSC_rep2, S_DSC_rep3)))
-
-scb <- scb %>% 
-  select(-matches("rep\\d"))
-
-str(scb)
-# rowwise_df [26,787 × 5] (S3: rowwise_df/tbl_df/tbl/data.frame)
+scb.cpm <- scb.cpm %>%
+  rownames_to_column("cds") %>%
+  filter(cds %in% scb_upReg$cds)
 
 
+# This is cumbersome but cannot get mutate to work 
+# with rowMeans(select(starts_with(col)))
+scb.cpm <- scb.cpm %>% 
+  rowwise() %>% 
+  mutate(R_CP = mean(c(R_CP_rep1, R_CP_rep2, R_CP_rep3)),
+         R_DSC = mean(c(R_DSC_rep1, R_DSC_rep2, R_DSC_rep3)),
+         S_CP = mean(c(S_CP_rep1, S_CP_rep2, S_CP_rep3)),
+         S_DSC = mean(c(S_DSC_rep1, S_DSC_rep2, S_DSC_rep3)),
+         .keep = "unused")
 
-# Read TMM normalized CPM from mapped to differentially expressed CDS in 
+str(scb.cpm)
+# rowwise_df [1,293 × 5] (S3: rowwise_df/tbl_df/tbl/data.frame)
+
+
+# Read TMM normalized CPM mapped to differentially expressed CDS in 
 # LMD experiment
-sctc <- read.delim("results/SCTC.tmm_normalized_cpm.txt")
+sctc.cpm <- read.delim("results/SCTC.tmm_normalized_cpm.txt")
 
-sctc <- sctc %>% rownames_to_column("cds")
+sctc.cpm <- sctc.cpm %>% 
+  rownames_to_column("cds") %>%
+  filter(cds %in% scb_upReg$cds)
 
-str(sctc)
-# 'data.frame':	5305 obs. of  25 variables:
-
-sctc <- sctc %>%
+sctc.cpm <- sctc.cpm %>%
   rowwise() %>%
-  mutate(R_T1 = mean(c(R_T1_rep1, R_T1_rep2, R_T1_rep3)))
+  mutate(R_T1 = mean(c(R_T1_rep1, R_T1_rep2, R_T1_rep3)),
+         R_T2 = mean(c(R_T2_rep1, R_T2_rep2, R_T2_rep3)),
+         R_T3 = mean(c(R_T3_rep1, R_T3_rep2, R_T3_rep3)),
+         R_T4 = mean(c(R_T4_rep1, R_T4_rep2, R_T4_rep3)),
+         S_T1 = mean(c(S_T1_rep1, S_T1_rep2, S_T1_rep3)),
+         S_T2 = mean(c(S_T2_rep1, S_T2_rep2, S_T2_rep3)),
+         S_T3 = mean(c(S_T3_rep1, S_T3_rep2, S_T3_rep3)),
+         S_T4 = mean(c(S_T4_rep1, S_T4_rep2, S_T4_rep3)),
+         .keep = "unused")
 
-sctc <- sctc %>%
-  rowwise() %>%
-  mutate(R_T2 = mean(c(R_T2_rep1, R_T2_rep2, R_T2_rep3)))
-
-sctc <- sctc %>%
-  rowwise() %>%
-  mutate(R_T3 = mean(c(R_T3_rep1, R_T3_rep2, R_T3_rep3)))
-
-sctc <- sctc %>%
-  rowwise() %>%
-  mutate(R_T4 = mean(c(R_T4_rep1, R_T4_rep2, R_T4_rep3)))
-
-
-sctc <- sctc %>%
-  rowwise() %>%
-  mutate(S_T1 = mean(c(S_T1_rep1, S_T1_rep2, S_T1_rep3)))
-
-sctc <- sctc %>%
-  rowwise() %>%
-  mutate(S_T2 = mean(c(S_T2_rep1, S_T2_rep2, S_T2_rep3)))
-
-sctc <- sctc %>%
-  rowwise() %>%
-  mutate(S_T3 = mean(c(S_T3_rep1, S_T3_rep2, S_T3_rep3)))
-
-sctc <- sctc %>%
-  rowwise() %>%
-  mutate(S_T4 = mean(c(S_T4_rep1, S_T4_rep2, S_T4_rep3)))
-
-sctc <- sctc %>% 
+sctc.cpm <- sctc.cpm %>% 
   select(-matches("_rep\\d"))
 
-str(sctc)
-# rowwise_df [5,305 × 9] (S3: rowwise_df/tbl_df/tbl/data.frame)
+str(sctc.cpm)
+# rowwise_df [1,293 × 8] (S3: rowwise_df/tbl_df/tbl/data.frame)
 
 
-# Joining two dataframes.  These are CPM for all DE contigs in LMD experiment
-sigDE_cpm <- right_join(scb, sctc)
-# Joining, by = "cds"
-
-str(sigDE_cpm)
-# rowwise_df [5,305 × 13] (S3: rowwise_df/tbl_df/tbl/data.frame)
-
-
-# Subset sigDE_cpm for S_cType_excl
-S_cType_excl_cpm <- sigDE_cpm %>% 
-  filter(cds %in% S_cType_excl$cds)
-
-str(S_cType_excl_cpm)
-# rowwise_df [244 × 13] (S3: rowwise_df/tbl_df/tbl/data.frame)
-
-
-# Subset sigDE_cpm for R_cType_excl
-R_cType_excl_cpm <- sigDE_cpm %>%
-  filter(cds %in% R_cType_excl$cds)
-
-str(R_cType_excl_cpm)
-# rowwise_df [1,129 × 13] (S3: rowwise_df/tbl_df/tbl/data.frame)
-
-
-
-
-# Takes 2 matrices and 2 output file as argument
-# Heatmap 2 is base on distrance matrix created from heatmap 1
-makeHM <- function(scb_cpm, sctc_cpm, outfile) {
-  
-  scb_cpm <- as.matrix(scb_cpm)
-  
-  scb_d <- as.dist(1- cor(t(scb_cpm), method = "pearson"))
-  
-  scb_c <- hclust(scb_d, method = "complete")
-
-  scb_dendrogram <- as.dendrogram(scb_c)
-  
-  scb_hm <- 
-    heatmaply(scb_cpm,
-              colors = heat.colors(50),
-              scale = "row",
-              row_dend_left = TRUE,
-              Rowv = scb_dendrogram,
-              hide_colorbar = TRUE,
-              dendrogram = "row",
-              showticklabels = c(TRUE, FALSE)
-              # file = outfile1
-              )
-  
-  sctc_hm <- 
-    heatmaply(as.matrix(sctc_cpm),
-              colors = heat.colors(50),
-              scale = "row",
-              Rowv = scb_dendrogram,
-              hide_colorbar = TRUE,
-              dendrogram = "row",
-              show_dendrogram = c(FALSE, FALSE),
-              showticklabels = c(TRUE, FALSE)
-              # file = outfile2
-              )
- 
-  # merged <- subplot(scb_hm, sctc_hm, margin = 0.005)
-  merged <- subplot(scb_hm, sctc_hm, margin = 0)
-  
-  htmlwidgets::saveWidget(merged, 
-                          file = outfile, 
-                          selfcontained = TRUE)
-}
-
-# Subset sigDE_cpm for commons
-commons_cpm <- sigDE_cpm[sigDE_cpm$cds %in% commons, ]
-
-str(commons_cpm)
-# rowwise_df [80 × 13] (S3: rowwise_df/tbl_df/tbl/data.frame)
-
-scb.commons <- scb %>% 
-  filter(cds %in% commons) %>%
+# 1a - Subset LMD data for sequences up-regulated in susceptible genotype only
+scb.s_upReg.cpm <- scb.cpm %>%
+  filter(cds %in% scb.s_upReg) %>%
   column_to_rownames("cds")
 
-sctc.commons <- sctc %>%
-  filter(cds %in% commons) %>%
+str(scb.s_upReg.cpm)
+# 'data.frame':	244 obs. of  4 variables:
+
+scb.s_upReg.hm <- makeHM(scb.s_upReg.cpm, "something")
+
+orca(scb.s_upReg.hm,
+     file = "results/figures/scb.s_upReg.9Jul.svg")
+
+
+# 1b - 
+sctc.s_peakedT2T3.cpm <- sctc.cpm %>% 
+  filter(cds %in% scb.s_upReg) %>%
+  filter((S_T2 > S_T1) & (S_T2 > S_T4) & (S_T3 > S_T1) & (S_T3 > S_T4)) %>%
   column_to_rownames("cds")
 
-makeHM(scb.commons, sctc.commons, "results/figures/commons.html")
+str(sctc.s_peakedT2T3.cpm)
+# 'data.frame':	34 obs. of  8 variables:
+
+write(rownames(sctc.s_peakedT2T3.cpm), 
+          "data/sctc.s_peakedT2T3.cdsId.txt")
+
+sctc.s_peakedT2T3.hm <- 
+  make2HM(sctc.s_peakedT2T3.cpm %>% select(starts_with("S_T")),
+          sctc.s_peakedT2T3.cpm %>% select(starts_with("R_T")),
+          "sctc.s_peakedT2T3")
+
+orca(sctc.s.peakedT2T3.hm,
+     file = "results/figures/sctc.s_peakedT2T3.9Jul.svg")
 
 
-# Subset sigDE_cpm for S_cType_excl
-scb.s_ctype <- scb %>% 
-  filter(cds %in% S_cType_excl$cds) %>%
+# 2a - Subset LMD data for sequences up-regulated in resistance genotype only
+scb.r_upReg.cpm <- scb.cpm %>%
+  filter(cds %in% scb.r_upReg) %>%
   column_to_rownames("cds")
 
-sctc.s_ctype <- sctc %>% 
-  filter(cds %in% S_cType_excl$cds) %>%
+str(scb.r_upReg.cpm)
+# 'data.frame':	1129 obs. of  4 variables:
+
+scb.r_upReg.hm <- makeHM(scb.r_upReg.cpm, "something")
+
+orca(scb.r_upReg.hm,
+     file = "results/figures/scb.r_upReg.9Jul.svg")
+
+
+# 2b
+sctc.r_peakedT2T3.cpm <- sctc.cpm %>% 
+  filter(cds %in% scb.r_upReg) %>%
+    filter((R_T2 > R_T1) & (R_T2 > R_T4) & (R_T3 >= R_T1) & (R_T3 > R_T4)) %>%
   column_to_rownames("cds")
 
-makeHM(scb.s_ctype, sctc.s_ctype, "results/figures/S_cType.html")
+str(sctc.r_peakedT2T3.cpm)
+# 'data.frame':	256 obs. of  8 variables:
+
+write(rownames(sctc.r_peakedT2T3.cpm), 
+      "data/sctc.r_peakedT2T3.cdsId.txt")
+
+sctc.r_peakedT2T3.hm <- 
+  make2HM(sctc.r_peakedT2T3.cpm %>% select(starts_with("R_T")),
+          sctc.r_peakedT2T3.cpm %>% select(starts_with("S_T")),
+        "sctc.r_peakedT2T3")
+
+orca(sctc.r_peakedT2T3.hm,
+     file = "results/figures/sctc.r_peakedT2T3.9Jul.svg")
 
 
-# Subset sigDE_cpm for R_cType_excl
-scb.r_ctype <- scb %>% 
-  filter(cds %in% R_cType_excl$cds) %>%
+# 3 - Subset sigDE_cpm for contig up-regulated in both resistance and 
+# susceptible genotype
+scb.rs_upReg.cpm <- scb.cpm %>%
+  filter(cds %in% scb.rs_upReg) %>%
   column_to_rownames("cds")
 
-sctc.r_ctype <- sctc %>% 
-  filter(cds %in% R_cType_excl$cds) %>%
+str(scb.rs_upReg.cpm)
+# 'data.frame':	80 obs. of  4 variables:
+
+scb.rs_upReg.hm <- makeHM(scb.rs_upReg.cpm, "something")
+
+orca(scb.rs_upReg.hm,
+     file = "results/figures/scb.rs_upReg.9Jul.svg")
+
+# 3b
+sctc.rs_peakedT2T3.cpm <- sctc.cpm %>% 
+  filter(cds %in% scb.rs.upReg) %>%
+  filter((R_T2 > R_T1) & (R_T2 > R_T4) & (R_T3 >= R_T1) & (R_T3 > R_T4)) %>%
   column_to_rownames("cds")
 
-makeHM(scb.r_ctype, sctc.r_ctype, "results/figures/R_cType.html")
+str(sctc.rs_peakedT2T3.cpm)
+# 'data.frame':	19 obs. of  8 variables:
 
+sctc.rs_peakedT2T3.hm <-   
+  make2HM(sctc.rs_peakedT2T3.cpm %>% select(starts_with("R_T")),
+          sctc.rs_peakedT2T3.cpm %>% select(starts_with("S_T")),
+          "sctc.rs_peakedT2T3")
 
-
-
-# makeHM(S_cType_excl_cpm, "results/figures/S_cType_hm.html")
-# 
-# makeHM(R_cType_excl_cpm, "results/figures/R_cType_hm.html")
-# 
-# makeHM(commons_cpm, "results/figures/commons.html")
+orca(sctc.rs_peakedT2T3.hm,
+     file = "results/figures/sctc.rs_peakedT2T3.9Jul.svg")

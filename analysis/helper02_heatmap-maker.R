@@ -1,38 +1,86 @@
 require(heatmaply)
 
-SCB_HM <- function(scb_cpm, sctc_cpm, outfile1, outfile2) {
+makeHM <- function(hm.cpm, out_prefix) {
+  
+  hm.cpm <- as.matrix(hm.cpm)
+  hm.dist <- as.dist(1- cor(t(hm.cpm), method = "pearson"))
+  hm.clust <- hclust(hm.dist, method = "complete")
+  hm.dendrogram <- as.dendrogram(hm.clust)
+  
+  hm <- heatmaply(hm.cpm,
+                  colors = heat.colors(50),
+                  scale = "row",
+                  
+                  Rowv = hm.dendrogram,
+                  show_dendrogram = c(TRUE, FALSE),
+                  row_dend_left = TRUE,
+                  
+                  hide_colorbar = TRUE,
+                  dendrogram = "row",
+                  showticklabels = c(TRUE, FALSE)
+                  # file = outfile
+  )
+  
+  # orca(hm, file = outfile, scale = "none")
+  
+  # htmlwidgets::saveWidget(
+  #   hm,
+  #   file = paste("results/figures/", outfile, ".html", sep = ""),
+  #   selfcontained = TRUE)
+  
+  return (hm)
+}
 
-  scb_cpm <- as.matrix(scb_cpm)
+
+# Takes a cpm in dataframe and output file as argument
+# TimeCourse heatmap is base on dendrogram created from LMD data
+make2HM <- function(cpm.1, cpm.2, out_prefix) {
   
-  scb_d <- as.dist(1- cor(t(scb_cpm), method = "pearson"))
+  hm.dist <- as.dist(1- cor(t(cpm.1), method = "pearson"))
+  hm.clust <- hclust(hm.dist, method = "complete")
+  hm.dendrogram <- as.dendrogram(hm.clust)
   
-  scb_c <- hclust(scb_d, method = "complete")
-  
-  scb_dendrogram <- as.dendrogram(scb_c)
-  
-  scb_hm <- 
-    heatmaply(scb_cpm,
+  hm.1 <-
+    heatmaply(cpm.1,
               colors = heat.colors(50),
               scale = "row",
+              
+              # Rowv = scb_dendrogram,
+              Rowv = hm.dendrogram,
+              show_dendrogram = c(TRUE, FALSE),
+              # show_dendrogram = c(FALSE, FALSE),
               row_dend_left = TRUE,
-              Rowv = scb_dendrogram,
+              # row_dend_left = FALSE,
+              
               hide_colorbar = TRUE,
               dendrogram = "row",
-              showticklabels = c(TRUE, FALSE),
-              file = outfile1
+              showticklabels = c(TRUE, FALSE)
     )
   
-  sctc_cpm <- as.matrix(sctc_cpm)
-  
-  sctc_hm <- 
-    heatmaply(sctc_cpm,
+  hm.2 <-
+    heatmaply(cpm.2,
               colors = heat.colors(50),
               scale = "row",
-              Rowv = scb_dendrogram,
+              
+              # Rowv = scb_dendrogram,
+              Rowv = hm.dendrogram,
+              show_dendrogram = c(FALSE, FALSE),
+              # show_dendrogram = c(TRUE, FALSE),
+              row_dend_left = FALSE,
+              # row_dend_left = TRUE,
+              
               hide_colorbar = TRUE,
               dendrogram = "row",
-              show_dendrogram = c(FALSE, FALSE),
-              showticklabels = c(TRUE, FALSE),
-              file = outfile2
+              
+              showticklabels = c(TRUE, FALSE)
     )
+  
+  merged <- subplot(hm.1, hm.2, margin = 0)
+  
+  # htmlwidgets::saveWidget(merged,
+  #                         file = paste("results/figures/", out_prefix, ".html", sep = ""),
+  #                         # file = "results/figures/test.html",
+  #                         selfcontained = TRUE)
+  
+  return (merged)
 }

@@ -114,6 +114,7 @@ write.table(
 
 v <- voom(y, plot = TRUE)
 
+write.table(v$E, "results/SCTC.log2cpm.txt", quote = FALSE, sep = "\t")
 
 p <- PCA_maker(expDes, v)
 ggsave("results/figures/SCTC-PCA.18Jun.svg", plot = p,
