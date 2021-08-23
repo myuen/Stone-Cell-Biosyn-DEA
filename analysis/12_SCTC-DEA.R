@@ -37,14 +37,6 @@ samples <- paste(samples, "_rep", sep = "") %>%
 names(quant.files) <- samples
 
 
-# Library R_T2_rep2 is an outlier, remove from analysis
-# quant.files <-
-#   quant.files[names(quant.files) != "R_T1_rep2"]
-
-# samples <-
-#   samples[samples != "R_T1_rep2"]
-
-
 txi <-
   tximport(quant.files,
            type = "salmon",
