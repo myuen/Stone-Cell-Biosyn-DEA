@@ -144,6 +144,7 @@ v <- voom(y, modMat, plot = TRUE)
 
 write.table(v$E, "results/SCB.log2cpm.txt", quote = FALSE, sep = "\t")
 
+
 p <- PCA_maker(expDes, v)
 ggsave("results/figures/SCB-PCA.15Jun.svg", plot = p,
         height = 6, width = 6)
@@ -189,7 +190,6 @@ results <- results %>%
 
 write.table(
   results, quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE,
-  # "results/SCB.all_stats.18March.txt"
   "results/SCB.all_stats.17Jun.txt"
 )
 
