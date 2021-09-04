@@ -6,7 +6,11 @@ library(tidyr)
 
 
 ### Read BLAST results for all DE contigs
-blast <- read.table("results//SCB.upRegDSC.17Jun.blastpNR.txt", 
+# blast <- read.table("results//SCB.upRegDSC.17Jun.blastpNR.txt", 
+#                     header = TRUE, sep = "\t", 
+#                     quote = "", stringsAsFactors = FALSE)
+
+blast <- read.table("results/SCB.upRegDSC.17Jun.blastpTAIR10.txt", 
                     header = TRUE, sep = "\t", 
                     quote = "", stringsAsFactors = FALSE)
 
@@ -41,8 +45,12 @@ sctc.s_peakedT2.tophit <-
 str(sctc.s_peakedT2.tophit)
 # tibble [25 × 21] (S3: tbl_df/tbl/data.frame)
 
+# write.table(sctc.s_peakedT2.tophit, 
+#             "results/SCTC.S_PeakedT2.blastTopHit.txt", 
+#             quote = FALSE, row.names = FALSE, sep = "\t")
+
 write.table(sctc.s_peakedT2.tophit, 
-            "results/SCTC.S_PeakedT2.blastTopHit.txt", 
+            "results/SCTC.S_PeakedT2.blastTopTAIR10Hit.txt", 
             quote = FALSE, row.names = FALSE, sep = "\t")
 
 
@@ -54,8 +62,12 @@ sctc.s_peakedT3.tophit <-
 str(sctc.s_peakedT3.tophit)
 # tibble [24 × 21] (S3: tbl_df/tbl/data.frame)
 
-write.table(sctc.s_peakedT3.tophit, 
-            "results/SCTC.S_PeakedT3.blastTopHit.txt", 
+# write.table(sctc.s_peakedT3.tophit, 
+#             "results/SCTC.S_PeakedT3.blastTopHit.txt", 
+#             quote = FALSE, row.names = FALSE, sep = "\t")
+
+write.table(sctc.s_peakedT3.tophit,
+            "results/SCTC.S_PeakedT3.blastTopTAIR10Hit.txt",
             quote = FALSE, row.names = FALSE, sep = "\t")
 
 
@@ -67,8 +79,12 @@ sctc.r_peakedT2.tophit <-
 str(sctc.r_peakedT2.tophit)
 # tibble [143 × 21] (S3: tbl_df/tbl/data.frame)
 
+# write.table(sctc.r_peakedT2.tophit, 
+#             "results/SCTC.R_PeakedT2.blastTopHit.txt", 
+#             quote = FALSE, row.names = FALSE, sep = "\t")
+
 write.table(sctc.r_peakedT2.tophit, 
-            "results/SCTC.R_PeakedT2.blastTopHit.txt", 
+            "results/SCTC.R_PeakedT2.blastTopTAIR10Hit.txt", 
             quote = FALSE, row.names = FALSE, sep = "\t")
 
 
@@ -77,6 +93,12 @@ sctc.r_peakedT3.tophit <-
   blast.tophit %>%
   filter(qseqid %in% sctc.r_peakedT3)
 
-write.table(sctc.r_peakedT3.tophit, 
-            "results/SCTC.R_PeakedT3.blastTopHit.txt", 
+str(sctc.r_peakedT3.tophit)
+
+# write.table(sctc.r_peakedT3.tophit, 
+#             "results/SCTC.R_PeakedT3.blastTopHit.txt", 
+#             quote = FALSE, row.names = FALSE, sep = "\t")
+
+write.table(sctc.r_peakedT3.tophit,
+            "results/SCTC.R_PeakedT3.blastTopTAIR10Hit.txt",
             quote = FALSE, row.names = FALSE, sep = "\t")
