@@ -1,0 +1,12 @@
+{
+    "salmon_version": "1.4.0",
+    "index": "salmon_index",
+    "libType": "A",
+    "mates1": "/data/SMarTForest/sitka/RNA-Seq/raw/Illumina/Multi_spruce_experiment-JWhitehill/1_bbduk/34-903_A10-1_R1.trimmed.fastq",
+    "mates2": "/data/SMarTForest/sitka/RNA-Seq/raw/Illumina/Multi_spruce_experiment-JWhitehill/1_bbduk/34-903_A10-1_R2.trimmed.fastq",
+    "output": "903_A10-1_salmon",
+    "threads": "24",
+    "numBootstraps": "50",
+    "allowDovetail": [],
+    "auxDir": "aux_info"
+}

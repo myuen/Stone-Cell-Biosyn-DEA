@@ -1,0 +1,21 @@
+{
+    "read_files": "[ /data2/Picea/Picea_sitchensis/RNA-Seq/raw/Illumina/Stone_Cell_Biosyn-JWhitehill/Nov-Rerun/903_CP_rep2_R1.fastq, /data2/Picea/Picea_sitchensis/RNA-Seq/raw/Illumina/Stone_Cell_Biosyn-JWhitehill/Nov-Rerun/903_CP_rep2_R2.fastq]",
+    "expected_format": "ISR",
+    "compatible_fragment_ratio": 1.0,
+    "num_compatible_fragments": 24159814,
+    "num_assigned_fragments": 24159814,
+    "num_frags_with_consistent_mappings": 21041971,
+    "num_frags_with_inconsistent_or_orphan_mappings": 3118654,
+    "MSF": 0,
+    "OSF": 0,
+    "ISF": 3082,
+    "MSR": 0,
+    "OSR": 0,
+    "ISR": 21041971,
+    "SF": 1936487,
+    "SR": 1179085,
+    "MU": 0,
+    "OU": 0,
+    "IU": 0,
+    "U": 0
+}

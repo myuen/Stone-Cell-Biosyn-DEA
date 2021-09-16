@@ -1,0 +1,22 @@
+{
+    "read_files": "[ /data/SMarTForest/sitka/RNA-Seq/raw/Illumina/Multi_spruce_experiment-JWhitehill/1_bbduk/27-898_A8-4_R1.trimmed.fastq, /data/SMarTForest/sitka/RNA-Seq/raw/Illumina/Multi_spruce_experiment-JWhitehill/1_bbduk/27-898_A8-4_R2.trimmed.fastq]",
+    "expected_format": "ISR",
+    "compatible_fragment_ratio": 1.0,
+    "num_compatible_fragments": 3836799,
+    "num_assigned_fragments": 3836799,
+    "num_frags_with_concordant_consistent_mappings": 3090573,
+    "num_frags_with_inconsistent_or_orphan_mappings": 767341,
+    "strand_mapping_bias": 0.00031796286400763885,
+    "MSF": 0,
+    "OSF": 0,
+    "ISF": 983,
+    "MSR": 0,
+    "OSR": 0,
+    "ISR": 3090573,
+    "SF": 412443,
+    "SR": 353915,
+    "MU": 0,
+    "OU": 0,
+    "IU": 0,
+    "U": 0
+}

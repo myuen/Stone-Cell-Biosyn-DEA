@@ -1,0 +1,11 @@
+{
+    "salmon_version": "0.11.3",
+    "index": "Salmon_Index",
+    "libType": "A",
+    "mates1": "/data2/Picea/Picea_sitchensis/RNA-Seq/raw/Illumina/Stone_Cell_Biosyn-JWhitehill/Nov-Rerun/903_DSC_rep3_R1.fastq",
+    "mates2": "/data2/Picea/Picea_sitchensis/RNA-Seq/raw/Illumina/Stone_Cell_Biosyn-JWhitehill/Nov-Rerun/903_DSC_rep3_R2.fastq",
+    "threads": "6",
+    "output": "903_DSC_rep3_novRun_salmon",
+    "numBootstraps": "50",
+    "auxDir": "aux_info"
+}
