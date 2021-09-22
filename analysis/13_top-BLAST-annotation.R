@@ -1,4 +1,5 @@
 library(dplyr)
+library(heatmaply)
 library(purrr)
 library(readr)
 library(stringr)
@@ -154,9 +155,9 @@ makeHM <- function(goi, out_prefix) {
   # return (hm)
 }
 
-makeHM(scb.goi, "lmd-mockup-hm.sep16")
-makeHM(sctc.r.goi, "sctc-r-mockup-hm.sep16")
-makeHM(sctc.s.goi, "sctc-s-mockup-hm.sep16")
+makeHM(scb.goi, "lmd-mockup-hm.sep22")
+makeHM(sctc.r.goi, "sctc-r-mockup-hm.sep22")
+makeHM(sctc.s.goi, "sctc-s-mockup-hm.sep22")
 
 
 ### END HERE ###
