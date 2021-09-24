@@ -6,8 +6,7 @@ library(stringr)
 library(tibble)
 library(tximport)
 
-
-source("analysis/helper01_PCA-maker.R")
+source("analysis/helper01_LMD-PCA-maker.R")
 
 
 ### Differential Expression Analysis on Sitka Spruce Cell type 
@@ -145,7 +144,8 @@ v <- voom(y, modMat, plot = TRUE)
 
 
 p <- PCA_maker(expDes, v)
-ggsave("results/figures/LMD-PCA.15Jun.svg", plot = p,
+
+ggsave("results/figures/LMD-PCA.svg", plot = p,
         height = 6, width = 6)
 
 
@@ -189,7 +189,7 @@ results <- results %>%
 
 write.table(
   results, quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE,
-  "results/LMD.all_stats.17Jun.txt"
+  "results/LMD.all_stats.txt"
 )
 
 
@@ -199,7 +199,7 @@ sigDE <- results %>%
 
 write.table(
   sigDE, quote = FALSE, sep = "\t", col.names = TRUE, row.names = FALSE,
-  "results/LMD.sigDE_stats.17Jun.txt"
+  "results/LMD.sigDE_stats.txt"
 )
 
 
@@ -218,7 +218,7 @@ length(upReg)
 # Write out CDS ID to file
 write.table(
   upReg,
-  "results/LMD.upRegDSC.17Jun.txt",
+  "results/LMD.upRegDSC.txt",
   quote = FALSE,
   col.names = FALSE,
   row.names = FALSE
