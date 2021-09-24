@@ -4,7 +4,7 @@ library(stringr)
 library(tximport)
 
 
-source("analysis/helper01_PCA-maker.R")
+source("analysis/helper02_TC-PCA-maker.R")
 
 
 # Import file with tximport
@@ -109,5 +109,6 @@ v <- voom(y, plot = TRUE)
 
 
 p <- PCA_maker(expDes, v)
-ggsave("results/figures/TC-PCA.18Jun.svg", plot = p,
+
+ggsave("results/figures/TC-PCA.svg", plot = p,
        height = 6, width = 6)
