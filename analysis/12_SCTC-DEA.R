@@ -97,17 +97,17 @@ dim(x)
 # TMM Normalization by Depth
 y <- calcNormFactors(x)
 
-sctc_cpm <- cpm(y)
+# tc for TimeCourse
+tc.cpm <- cpm(y)
 
 write.table(
-  sctc_cpm,
-  "results/SCTC.tmm_normalized_cpm.txt",
+  sctc.cpm,
+  "results/TC.tmm_normalized_cpm.txt",
   row.names = TRUE, col.names = TRUE, sep = "\t", quote = FALSE)
 
 v <- voom(y, plot = TRUE)
 
-write.table(v$E, "results/SCTC.log2cpm.txt", quote = FALSE, sep = "\t")
 
 p <- PCA_maker(expDes, v)
-ggsave("results/figures/SCTC-PCA.18Jun.svg", plot = p,
+ggsave("results/figures/TC-PCA.18Jun.svg", plot = p,
        height = 6, width = 6)
