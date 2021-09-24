@@ -101,11 +101,12 @@ y$samples$lib.size <- colSums(y$counts)
 # TMM Normalization by Depth
 y <- calcNormFactors(y)
 
-scb_cpm <- cpm(y)
+# LMD for Laser Micro Dissection
+lmd.cpm <- cpm(y)
 
 write.table(
-  scb_cpm,
-  "results/SCB.tmm_normalized_cpm.txt",
+  lmd.cpm,
+  "results/LMD.tmm_normalized_cpm.txt",
   row.names = TRUE, col.names = TRUE, sep = "\t", quote = FALSE)
 
 
@@ -142,11 +143,9 @@ cont_matrix <- makeContrasts(
 # voom transformation
 v <- voom(y, modMat, plot = TRUE)
 
-write.table(v$E, "results/SCB.log2cpm.txt", quote = FALSE, sep = "\t")
-
 
 p <- PCA_maker(expDes, v)
-ggsave("results/figures/SCB-PCA.15Jun.svg", plot = p,
+ggsave("results/figures/LMD-PCA.15Jun.svg", plot = p,
         height = 6, width = 6)
 
 
@@ -190,7 +189,7 @@ results <- results %>%
 
 write.table(
   results, quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE,
-  "results/SCB.all_stats.17Jun.txt"
+  "results/LMD.all_stats.17Jun.txt"
 )
 
 
@@ -200,7 +199,7 @@ sigDE <- results %>%
 
 write.table(
   sigDE, quote = FALSE, sep = "\t", col.names = TRUE, row.names = FALSE,
-  "results/SCB.sigDE_stats.17Jun.txt"
+  "results/LMD.sigDE_stats.17Jun.txt"
 )
 
 
@@ -219,7 +218,7 @@ length(upReg)
 # Write out CDS ID to file
 write.table(
   upReg,
-  "results/SCB.upRegDSC.17Jun.txt",
+  "results/LMD.upRegDSC.17Jun.txt",
   quote = FALSE,
   col.names = FALSE,
   row.names = FALSE
