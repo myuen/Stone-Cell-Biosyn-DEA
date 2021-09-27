@@ -19,14 +19,6 @@ go_2_tair <- as.list(org.At.tairGO2ALLTAIRS)
 
 go_2_tair <- go_2_tair[secondary_cellwall_goIDs]
 
-# tairids <- map(goid_tairids, function(g){
-#   # g[names(g) == "TAS"]
-#   g[names(g) %in% c("IC","TAS")]
-# }) %>% unlist() %>% unique()
-# 
-# length(tairids)
-# [1] 11
-
 
 # TAIR IDs associated with secondary cell wall biosynthesis
 secondary_cellwall_tairIDs <- go_2_tair %>% unlist() %>% unique()
@@ -67,52 +59,56 @@ str(blast.tophit)
 # tibble [73 × 3] (S3: tbl_df/tbl/data.frame)
 
 
-
 # Read TMM normalized CPM from differentially expressed CDS from LMD experiment
-scb_rowmean_cpm <- read.delim("results/SCB.rowmean_cpm.txt")
+lmd.rowmean.cpm <- read.delim("results/LMD.rowmean_cpm.txt")
 
-scb.2ndCW <- 
-  inner_join(blast.tophit, scb_rowmean_cpm, by = c("qseqid" = "cds")) %>%
+lmd.2ndCW <- 
+  inner_join(blast.tophit, lmd.rowmean.cpm, by = c("qseqid" = "cds")) %>%
   column_to_rownames("qseqid")
 
-str(scb.2ndCW)
+str(lmd.2ndCW)
 # 'data.frame':	73 obs. of  6 variables:
 
 
 # Read TMM normalized CPM mapped to differentially expressed CDS in 
 # LMD experiment
-sctc_rowmean_cpm <- read.delim("results/SCTC.rowmean_cpm.txt")
+tc.rowmean.cpm <- read.delim("results/TC.rowmean_cpm.txt")
 
-sctc.2ndCW <-
-  inner_join(blast.tophit, sctc_rowmean_cpm, by = c("qseqid" = "cds")) %>%
+tc.2ndCW <-
+  inner_join(blast.tophit, tc.rowmean.cpm, by = c("qseqid" = "cds")) %>%
   column_to_rownames("qseqid")
 
-str(sctc.2ndCW)
+str(tc.2ndCW)
 # 'data.frame':	73 obs. of  10 variables:
 
 
-
-sctc.r.2ndCW <- sctc.2ndCW %>% 
+tc.r.2ndCW <- tc.2ndCW %>% 
   dplyr::select(!starts_with("S", ignore.case = FALSE))
 
-# TODO: Check CDS expression != 0
-# sctc.r.2ndCW <- sctc.r.2ndCW[,rowSums(c(str_starts(colnames(sctc.r.2ndCW), "R")))]
+# Check CDS is expressed
+table(as.logical(tc.r.2ndCW %>% 
+                   dplyr::select(starts_with("R")) %>% 
+                   rowSums()))
+# TRUE 
+#   73 
 
-str(sctc.r.2ndCW)
+str(tc.r.2ndCW)
 # 'data.frame':	73 obs. of  6 variables:
 
 
-sctc.s.2ndCW <- sctc.2ndCW %>% 
+tc.s.2ndCW <- tc.2ndCW %>% 
   dplyr::select(!starts_with("R", ignore.case = FALSE))
 
 # TODO: Check CDS expression != 0
-# sctc.s.2ndCW <- 
-#   sctc.r.2ndCW %>% dplyr::select(starts_with("R")) %>% rowSums()
+table(as.logical(tc.s.2ndCW %>% 
+                   dplyr::select(starts_with("S", ignore.case = FALSE)) %>% 
+                   rowSums()))
+# TRUE 
+#   73 
 
-str(sctc.s.2ndCW)
+str(tc.s.2ndCW)
 # 'data.frame':	73 obs. of  6 variables:
 
-###
 
 makeHM <- function(goi, out_prefix) {
   
@@ -152,6 +148,6 @@ makeHM <- function(goi, out_prefix) {
   # return (hm)
 }
 
-makeHM(scb.2ndCW, "lmd-2nd-cellwall-hm.sep23")
-makeHM(sctc.r.2ndCW, "sctc-r-2nd-cellwall-hm.sep23")
-makeHM(sctc.s.2ndCW, "sctc-s-2nd-cellwall-hm.sep23")
+makeHM(lmd.2ndCW, "lmd.2nd-cellwall-hm")
+makeHM(tc.r.2ndCW, "tc-r.2nd-cellwall-hm")
+makeHM(tc.s.2ndCW, "tc-s-2nd-cellwall-hm")
