@@ -26,6 +26,8 @@ secondary_cellwall_tairIDs <- go_2_tair %>% unlist() %>% unique()
 length(secondary_cellwall_tairIDs)
 # [1] 183
 
+write(secondary_cellwall_tairIDs, "results/secondary_cellwall_tairIDs.txt")
+
 
 ### Read BLAST results for all DE contigs
 blast <- read.table("data/SCB.upRegDSC.17Jun.blastpTAIR10.txt", 
