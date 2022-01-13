@@ -1,7 +1,7 @@
 library(dplyr)
 library(stringr)
 
-
+# Supplementary table
 stats <- read.table("results/LMD.sigDE_stats.txt", sep = "\t",
                     header = TRUE, stringsAsFactors = FALSE)
 
@@ -22,6 +22,7 @@ blast <- read.table("data/SCB.upRegDSC.17Jun.blastpTAIR10.txt",
 
 blast <- blast %>% select(qseqid, sseqid, evalue, salltitles)
 
+# Strip version ID from TAIR accession
 blast$sseqid <- blast$sseqid %>% 
   str_replace(".\\d$", "")
 
