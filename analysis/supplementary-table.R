@@ -25,7 +25,8 @@ colnames(upReg)[4] <- "Up_Regulation"
 blast <- read.table("data/SCB.upRegDSC.17Jun.blastpTAIR10.txt",
                     sep = "\t", header = TRUE, stringsAsFactors = FALSE)
 
-blast <- blast %>% select(qseqid, sseqid, evalue, salltitles)
+blast <- blast %>% 
+  select(qseqid, sseqid, evalue, pident, ppos, salltitles)
 
 
 # Strip version ID from TAIR accession
