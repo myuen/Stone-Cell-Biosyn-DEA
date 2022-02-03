@@ -34,3 +34,12 @@ tableS3 %>% group_by(focus_term, logFC > 0) %>% summarize(n = n())
 # 4 S_cType    TRUE         2097
 
 
+tableS3 %>% group_by(focus_term, logFC > 0) %>% 
+  group_size()
+# [1]   495 10347   451  2097
+
+
+tableS3 %>% 
+  group_by(focus_term, logFC > 0) %>% 
+  group_walk(~ write.table(.x, file = paste0("results/", .y$focus_term, ".txt"), 
+                           quote = FALSE, row.names = FALSE, sep = "\t"))
