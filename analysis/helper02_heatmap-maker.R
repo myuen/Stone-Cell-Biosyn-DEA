@@ -8,16 +8,17 @@ makeHM <- function(hm.cpm, out_prefix) {
   hm.dendrogram <- as.dendrogram(hm.clust)
   
   hm <- heatmaply(hm.cpm,
-                  colors = heat.colors(50),
+                  # colors = heat.colors(50),
+                  colors = viridis(80),
                   scale = "row",
                   
                   Rowv = hm.dendrogram,
                   show_dendrogram = c(TRUE, FALSE),
                   row_dend_left = TRUE,
                   
-                  hide_colorbar = TRUE,
+                  # hide_colorbar = TRUE,
                   dendrogram = "row",
-                  showticklabels = c(TRUE, FALSE)
+                  showticklabels = c(TRUE, FALSE),
                   # file = outfile
   )
   
