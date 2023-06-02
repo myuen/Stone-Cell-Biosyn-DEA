@@ -2,6 +2,7 @@ library(edgeR)
 library(dplyr)
 library(limma)
 library(purrr)
+library(readr)
 library(stringr)
 library(tibble)
 library(tximport)
@@ -142,8 +143,7 @@ cont_matrix <- makeContrasts(
 # voom transformation
 v <- voom(y, modMat, plot = TRUE)
 
-
-p <- PCA_maker(expDes, v)
+(p <- PCA_maker(expDes, v))
 
 ggsave("results/figures/LMD-PCA.svg", plot = p,
         height = 6, width = 6)
