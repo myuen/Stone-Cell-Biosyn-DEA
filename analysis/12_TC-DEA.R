@@ -1,5 +1,6 @@
 library(edgeR)
 library(limma)
+library(readr)
 library(stringr)
 library(tximport)
 
@@ -108,7 +109,7 @@ write.table(
 v <- voom(y, plot = TRUE)
 
 
-p <- PCA_maker(expDes, v)
+(p <- PCA_maker(expDes, v))
 
 ggsave("results/figures/TC-PCA.svg", plot = p,
        height = 6, width = 6)
